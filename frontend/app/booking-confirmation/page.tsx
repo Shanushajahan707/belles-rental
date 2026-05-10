@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
 // Force dynamic rendering to prevent prerendering errors
 export const dynamic = 'force-dynamic';
@@ -47,7 +47,7 @@ interface Invoice {
   createdAt: string;
 }
 
-export default function BookingConfirmationPage() {
+function BookingConfirmationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingNumber = searchParams.get('bookingNumber');
@@ -64,7 +64,7 @@ export default function BookingConfirmationPage() {
   const fetchBooking = async () => {
     try {
       const response = await api.get(`/bookings/number/${bookingNumber}`);
-      console.log('booking data',response.data);
+      console.log('booking data', response.data);
       setBooking(response.data);
 
       // Fetch corresponding invoice
@@ -288,7 +288,7 @@ export default function BookingConfirmationPage() {
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex justify-center gap-4">
                   <Link href="/admin/dashboard" className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                    Continue 
+                    Continue
                   </Link>
                   <Link href="/admin/invoices" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
                     View Invoices
@@ -315,5 +315,20 @@ export default function BookingConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600">Loading booking details...</p>
+        </div>
+      </div>
+    }>
+      <BookingConfirmationContent />
+    </Suspense>
   );
 }
