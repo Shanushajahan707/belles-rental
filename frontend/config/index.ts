@@ -5,8 +5,8 @@ export const IS_PRODUCTION = true; // <-- SWITCH THIS FLAG
 
 // API URLs based on flag
 export const API_URL = IS_PRODUCTION 
-  ? 'https://belles-rental.onrender.com' 
-  : 'http://localhost:5000';
+  ? 'https://belles-rental.onrender.com/api' 
+  : 'http://localhost:5000/api';
 
 // Environment info
 export const ENVIRONMENT = IS_PRODUCTION ? 'production' : 'development';
