@@ -1,9 +1,11 @@
 import axios from 'axios';
+import { API_URL } from '../config';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Use simple flag-based configuration
+const BASE_URL = API_URL;
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
