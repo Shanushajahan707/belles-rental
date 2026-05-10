@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Calendar, Clock, User, Phone, MapPin, DollarSign } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Calendar, Clock, User, Phone, MapPin, DollarSign, Download } from 'lucide-react';
 
 interface Booking {
   _id: string;
@@ -25,12 +25,35 @@ interface Booking {
   createdAt: string;
 }
 
+interface Invoice {
+  _id: string;
+  invoiceNumber: string;
+  bookingId: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  items: any[];
+  bookingNumber: string;
+  startDate: string;
+  returnDate: string;
+  totalRent: number;
+  totalDeposit: number;
+  discount: number;
+  totalAmount: number;
+  shopName: string;
+  shopAddress: string;
+  shopPhone: string;
+  shopEmail: string;
+  createdAt: string;
+}
+
 export default function BookingConfirmationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingNumber = searchParams.get('bookingNumber');
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
     if (bookingNumber) {
@@ -41,7 +64,17 @@ export default function BookingConfirmationPage() {
   const fetchBooking = async () => {
     try {
       const response = await api.get(`/bookings/number/${bookingNumber}`);
+      console.log('booking data',response.data);
       setBooking(response.data);
+
+      // Fetch corresponding invoice
+      try {
+        const invoiceResponse = await api.get(`/invoices/booking/${response.data._id}`);
+        setInvoice(invoiceResponse.data);
+      } catch (invoiceError) {
+        console.log('No invoice found for this booking:', invoiceError);
+        setInvoice(null);
+      }
     } catch (error) {
       console.error('Error fetching booking:', error);
     } finally {
@@ -96,9 +129,9 @@ export default function BookingConfirmationPage() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
+            <Link href="/admin/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-5 h-5" />
-              Back to Home
+              Back to Admin Dashboard
             </Link>
             <h1 className="text-2xl font-bold text-gray-800">Booking Confirmation</h1>
           </div>
@@ -254,12 +287,27 @@ export default function BookingConfirmationPage() {
               {/* Actions */}
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex justify-center gap-4">
-                  <Link href="/rentals" className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                    Continue Shopping
+                  <Link href="/admin/dashboard" className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    Continue 
                   </Link>
-                  <Link href={`/booking-confirmation?bookingNumber=${booking.bookingNumber}`} className="px-6 py-3 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
-                    Print Confirmation
+                  <Link href="/admin/invoices" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    View Invoices
                   </Link>
+                  {invoice ? (
+                    <button
+                      onClick={() => window.open(`/admin/invoices?search=${booking.bookingNumber}`, '_blank')}
+                      className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      title="Download Invoice"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Invoice
+                    </button>
+                  ) : (
+                    <div className="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
+                      <Download className="w-4 h-4" />
+                      Invoice Not Available
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

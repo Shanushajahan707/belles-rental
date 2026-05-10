@@ -323,4 +323,12 @@ export class BookingService {
       overdueBookings: bookings.filter(b => b.status === 'overdue').length,
     };
   }
+
+  async getBookingByNumber(bookingNumber: string): Promise<IBooking | null> {
+    try {
+      return await this.bookingRepository.findByBookingNumber(bookingNumber);
+    } catch (error: any) {
+      throw new Error(`Error fetching booking by number: ${error.message}`);
+    }
+  }
 }

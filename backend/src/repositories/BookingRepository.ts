@@ -18,6 +18,10 @@ export class BookingRepository {
     return Booking.find({ 'items.itemId': new mongoose.Types.ObjectId(itemId) }).sort({ createdAt: -1 }).populate('items.itemId');
   }
 
+  async findByBookingNumber(bookingNumber: string): Promise<IBooking | null> {
+    return Booking.findOne({ bookingNumber }).populate('items.itemId');
+  }
+
   async create(bookingData: Partial<IBooking>): Promise<IBooking> {
     const booking = new Booking(bookingData);
     return booking.save();

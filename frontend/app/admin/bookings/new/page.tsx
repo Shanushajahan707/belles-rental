@@ -97,9 +97,9 @@ export default function NewBookingPage() {
   const filteredItems = useMemo(() =>
     items.filter(
       item =>
-       
-        (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.itemCode.toLowerCase().includes(searchQuery.toLowerCase()))
+
+      (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.itemCode.toLowerCase().includes(searchQuery.toLowerCase()))
     ), [items, searchQuery]
   );
 
@@ -133,7 +133,7 @@ export default function NewBookingPage() {
         message: 'Booking created successfully!',
         type: 'success',
       });
-      router.push('/admin/bookings');
+      router.push(`/booking-confirmation?bookingNumber=${response.data.bookingNumber}`);
     } catch (error: any) {
       console.error('Error creating booking:', error);
       const errorMessage = error.response?.data?.error || 'Error creating booking';

@@ -22,8 +22,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/public', publicRoutes);
-
 app.use('/api/today-bookings', todayBookingsRoutes);
+
+// Add invoice routes
+import invoiceRoutes from './routes/invoices';
+app.use('/api/invoices', invoiceRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Belles Avenue Rental API' });

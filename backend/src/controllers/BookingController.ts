@@ -58,6 +58,17 @@ export class BookingController {
       };
 
       const booking = await this.bookingService.createBooking(bookingData);
+
+      // Automatically generate invoice for the new booking
+      try {
+        const { InvoiceService } = await import('../services/InvoiceService');
+        const invoiceService = new InvoiceService();
+        await invoiceService.generateInvoice(booking);
+      } catch (invoiceError) {
+        console.error('Error generating invoice:', invoiceError);
+        // Don't fail the booking if invoice generation fails
+      }
+
       res.status(201).json(booking);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -151,6 +162,22 @@ export class BookingController {
     } catch (error: any) {
       console.error('Error in getItems:', error);
       console.error('Error stack:', error.stack);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getBookingByNumber(req: Request, res: Response): Promise<void> {
+    try {
+      const { bookingNumber } = req.params;
+      const booking = await this.bookingService.getBookingByNumber(bookingNumber);
+
+      if (!booking) {
+        res.status(404).json({ error: 'Booking not found' });
+        return;
+      }
+
+      res.json(booking);
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   }

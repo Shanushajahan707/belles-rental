@@ -306,10 +306,18 @@ export default function BookingsManagement() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        {new Date(booking.startDate).toLocaleDateString()}
+                        {new Date(booking.startDate).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        {new Date(booking.returnDate).toLocaleDateString()}
+                        {new Date(booking.returnDate).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
                         ₹{booking.totalAmount}
