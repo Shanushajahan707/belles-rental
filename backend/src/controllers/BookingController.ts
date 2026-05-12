@@ -85,6 +85,17 @@ export class BookingController {
         res.status(404).json({ error: 'Booking not found' });
         return;
       }
+
+      // Automatically regenerate invoice for the updated booking
+      try {
+        const { InvoiceService } = await import('../services/InvoiceService');
+        const invoiceService = new InvoiceService();
+        await invoiceService.updateInvoice(booking);
+      } catch (invoiceError) {
+        console.error('Error updating invoice:', invoiceError);
+        // Don't fail the booking update if invoice update fails
+      }
+
       res.json(booking);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -177,6 +188,16 @@ export class BookingController {
       }
 
       res.json(booking);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getItemEarnings(req: Request, res: Response): Promise<void> {
+    try {
+      const { itemId } = req.params;
+      const earnings = await this.bookingService.getItemEarnings(itemId);
+      res.json({ totalEarnings: earnings });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

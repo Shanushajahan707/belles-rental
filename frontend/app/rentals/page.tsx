@@ -11,7 +11,10 @@ interface RentalItem {
   category: string;
   image: string;
   rentPrice: number;
+  halfRentPrice: number;
   securityDeposit: number;
+  halfSecurityDeposit: number;
+  supportsHalfPricing: boolean;
   status: 'available' | 'booked' | 'running';
 }
 
@@ -133,7 +136,17 @@ export default function RentalsPage() {
             <div key={item._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
                 {item.image ? (
-                  <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                  <img
+                    src={item.image.includes('drive.google.com')
+                      ? `https://drive.google.com/thumbnail?id=${item.image.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
+                      : item.image
+                    }
+                    alt={item.name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/400x300.png?text=Image+Not+Available';
+                    }}
+                  />
                 ) : (
                   <div className="text-6xl">💎</div>
                 )}
@@ -145,7 +158,7 @@ export default function RentalsPage() {
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
                     {item.status}
                   </span>
-               
+
                 </div>
 
                 <p className="text-sm text-gray-600 mb-1">
@@ -156,12 +169,26 @@ export default function RentalsPage() {
                 </p>
 
                 <div className="border-t pt-3 mt-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Rent: ₹{item.rentPrice}</span>
-                    <span className="text-gray-600">Deposit: ₹{item.securityDeposit}</span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700">Full Price:</span>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">Rent: ₹{item.rentPrice}</p>
+                        <p className="text-sm text-gray-600">Security: ₹{item.securityDeposit}</p>
+                      </div>
+                    </div>
+                    {item.supportsHalfPricing && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-green-700">Half Price:</span>
+                        <div className="text-right">
+                          <p className="text-sm text-green-600">Rent: ₹{item.halfRentPrice}</p>
+                          <p className="text-sm text-green-600">Security: ₹{item.halfSecurityDeposit}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {item.status === 'booked' && (
-                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-800 font-medium flex items-center gap-2">
                         <span className="text-yellow-600">⚠️</span>
                         This item is currently booked

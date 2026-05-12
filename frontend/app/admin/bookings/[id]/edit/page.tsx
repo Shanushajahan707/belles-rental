@@ -14,7 +14,10 @@ interface RentalItem {
   name: string;
   category: string;
   rentPrice: number;
+  halfRentPrice: number;
   securityDeposit: number;
+  halfSecurityDeposit: number;
+  supportsHalfPricing: boolean;
   status: 'available' | 'booked' | 'running';
 }
 
@@ -23,7 +26,8 @@ interface BookingItem {
   itemName: string;
   itemCode: string;
   rentPrice: number;
-  deposit: number;
+  security: number;
+  priceType?: 'full' | 'half';
 }
 
 interface Booking {
@@ -35,10 +39,14 @@ interface Booking {
   items: BookingItem[];
   startDate: string;
   returnDate: string;
-  discount: number;
+  rentDiscount: number;
+  securityDiscount: number;
+  advancePayment: number;
   totalAmount: number;
+  balanceAmount: number;
   status: string;
   createdBy: string;
+  note?: string;
 }
 
 export default function EditBookingPage() {
@@ -56,9 +64,12 @@ export default function EditBookingPage() {
     address: '',
     startDate: '',
     returnDate: '',
-    discount: '',
+    rentDiscount: '',
+    securityDiscount: '',
+    advancePayment: '',
     bookingNumber: '',
-    dealedStaff: ''
+    dealedStaff: '',
+    note: ''
   });
 
   useEffect(() => {
@@ -86,7 +97,8 @@ export default function EditBookingPage() {
         itemName: item.itemId?.name || item.itemName,
         itemCode: item.itemId?.itemCode || item.itemCode,
         rentPrice: item.rentPrice,
-        deposit: item.deposit,
+        security: item.security,
+        priceType: item.priceType || 'full',
       }));
 
       console.log('Mapped items:', mappedItems);
@@ -97,9 +109,12 @@ export default function EditBookingPage() {
         address: bookingData.address,
         startDate: bookingData.startDate.split('T')[0],
         returnDate: bookingData.returnDate.split('T')[0],
-        discount: bookingData.discount.toString(),
+        rentDiscount: bookingData.rentDiscount?.toString() || '',
+        securityDiscount: bookingData.securityDiscount?.toString() || '',
+        advancePayment: bookingData.advancePayment?.toString() || '',
         bookingNumber: bookingData.bookingNumber || '',
-        dealedStaff: bookingData.createdBy
+        dealedStaff: bookingData.createdBy,
+        note: bookingData.note || ''
       });
     } catch (error: any) {
       console.error('Error fetching booking:', error);
@@ -124,8 +139,11 @@ export default function EditBookingPage() {
     }
   };
 
-  const addItemToBooking = (item: RentalItem) => {
+  const addItemToBooking = (item: RentalItem, priceType?: 'full' | 'half') => {
     if (selectedItems.find(si => si.itemId === item._id)) return;
+
+    // Auto-determine price type based on item support
+    const selectedPriceType = priceType || (item.supportsHalfPricing ? 'half' : 'full');
 
     setSelectedItems([
       ...selectedItems,
@@ -133,8 +151,9 @@ export default function EditBookingPage() {
         itemId: item._id,
         itemName: item.name,
         itemCode: item.itemCode,
-        rentPrice: item.rentPrice,
-        deposit: item.securityDeposit,
+        rentPrice: selectedPriceType === 'half' ? item.halfRentPrice : item.rentPrice,
+        security: selectedPriceType === 'half' ? item.halfSecurityDeposit : item.securityDeposit,
+        priceType: selectedPriceType,
       },
     ]);
   };
@@ -153,9 +172,14 @@ export default function EditBookingPage() {
   );
 
   const totalRent = selectedItems.reduce((sum, item) => sum + item.rentPrice, 0);
-  const totalDeposit = selectedItems.reduce((sum, item) => sum + item.deposit, 0);
-  const discount = Number(formData.discount || '0') || 0;
-  const finalTotal = totalRent + totalDeposit - discount;
+  const totalSecurity = selectedItems.reduce((sum, item) => sum + item.security, 0);
+  const rentDiscount = Number(formData.rentDiscount || '0') || 0;
+  const securityDiscount = Number(formData.securityDiscount || '0') || 0;
+  const advancePayment = Number(formData.advancePayment || '0') || 0;
+  const totalRentAfterDiscount = totalRent - rentDiscount;
+  const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
+  const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+  const balanceAmount = totalAmount - advancePayment;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,12 +193,16 @@ export default function EditBookingPage() {
         items: selectedItems.map(si => ({
           itemId: si.itemId,
           rentPrice: si.rentPrice,
-          deposit: si.deposit,
+          security: si.security,
+          priceType: si.priceType,
         })),
         startDate: formData.startDate,
         returnDate: formData.returnDate,
-        discount: Number(formData.discount),
-        createdBy: formData.dealedStaff
+        rentDiscount: Number(formData.rentDiscount),
+        securityDiscount: Number(formData.securityDiscount),
+        advancePayment: Number(formData.advancePayment),
+        createdBy: formData.dealedStaff,
+        note: formData.note || undefined
       };
 
       await api.put(`/bookings/${params.id}`, bookingData);
@@ -312,6 +340,16 @@ export default function EditBookingPage() {
                     placeholder="123 Main Street, City"
                   />
                 </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Admin Note (Optional)</label>
+                  <textarea
+                    value={formData.note}
+                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    placeholder="Add any additional notes about this booking (e.g., weather conditions, special requirements, item condition notes). This note is only visible to admins."
+                  />
+                </div>
               </div>
             </div>
 
@@ -359,26 +397,54 @@ export default function EditBookingPage() {
                     No available items found
                   </div>
                 ) : (
-                  filteredItems.map((item: RentalItem) => (
-                    <div
-                      key={item._id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div>
-                        <p className="font-medium text-gray-800">{item.name}</p>
-                        <p className="text-sm text-gray-600">Item Code: {item.itemCode} • ₹{item.rentPrice} rent</p>
-                        <p className="text-sm text-gray-600">Security Deposit: ₹{item.securityDeposit}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => addItemToBooking(item)}
-                        disabled={selectedItems.some(si => si.itemId === item._id)}
-                        className="px-3 py-1 bg-pink-500 text-white text-sm rounded-lg hover:bg-pink-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  filteredItems.map((item: RentalItem) => {
+                    const isAdded = selectedItems.some(si => si.itemId === item._id);
+                    return (
+                      <div
+                        key={item._id}
+                        className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >
-                        {selectedItems.some(si => si.itemId === item._id) ? 'Added' : 'Add'}
-                      </button>
-                    </div>
-                  ))
+                        <div className="mb-2">
+                          <p className="font-medium text-gray-800">{item.name}</p>
+                          <p className="text-sm text-gray-600">Item Code: {item.itemCode}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                          <div>
+                            <p className="font-medium text-gray-700">Full Price:</p>
+                            <p className="text-gray-600">Rent: ₹{item.rentPrice}</p>
+                            <p className="text-gray-600">Security: ₹{item.securityDeposit}</p>
+                          </div>
+                          {item.supportsHalfPricing && (
+                            <div>
+                              <p className="font-medium text-green-700">Half Price:</p>
+                              <p className="text-green-600">Rent: ₹{item.halfRentPrice}</p>
+                              <p className="text-green-600">Security: ₹{item.halfSecurityDeposit}</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => addItemToBooking(item, 'full')}
+                            disabled={isAdded}
+                            className="flex-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Add Full
+                          </button>
+                          {item.supportsHalfPricing && (
+                            <button
+                              type="button"
+                              onClick={() => addItemToBooking(item, 'half')}
+                              disabled={isAdded}
+                              className="flex-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                            >
+                              Add Half
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -386,9 +452,24 @@ export default function EditBookingPage() {
 
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Calculator className="w-5 h-5 text-pink-600" />
-                <h2 className="text-xl font-bold text-gray-800">Booking Summary</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-pink-600" />
+                  <h2 className="text-xl font-bold text-gray-800">Booking Summary</h2>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-600">Items:</span>
+                  {selectedItems.filter(item => item.priceType === 'half').length > 0 && (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                      {selectedItems.filter(item => item.priceType === 'half').length} half
+                    </span>
+                  )}
+                  {selectedItems.filter(item => item.priceType === 'full').length > 0 && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                      {selectedItems.filter(item => item.priceType === 'full').length} full
+                    </span>
+                  )}
+                </div>
               </div>
 
               {selectedItems.length === 0 ? (
@@ -400,10 +481,13 @@ export default function EditBookingPage() {
                 <>
                   <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
                     {selectedItems.map(item => (
-                      <div key={item.itemId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                      <div key={item.itemId} className={`flex items-center justify-between p-2 rounded-lg ${item.priceType === 'half' ? 'bg-green-50' : 'bg-gray-50'}`}>
                         <div className="flex-1">
                           <p className="font-medium text-sm text-gray-800">{item.itemName}</p>
                           <p className="text-xs text-gray-600">{item.itemCode}</p>
+                          <p className={`text-xs font-medium ${item.priceType === 'half' ? 'text-green-600' : 'text-blue-600'}`}>
+                            {item.priceType === 'half' ? 'Half Price' : 'Full Price'}
+                          </p>
                         </div>
                         <button
                           type="button"
@@ -421,25 +505,54 @@ export default function EditBookingPage() {
                       <span className="text-black">Total Rent</span>
                       <span className="font-medium text-gray-800">₹{totalRent}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-black">Total Deposit</span>
-                      <span className="font-medium text-gray-800">₹{totalDeposit}</span>
-                    </div>
                     <div className="flex justify-between text-sm items-center">
-                      <span className="text-black">Discount</span>
+                      <span className="text-black">Rent Discount</span>
                       <input
                         type="number"
-                        value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                        value={formData.rentDiscount}
+                        onChange={(e) => setFormData({ ...formData, rentDiscount: e.target.value })}
                         min="0"
                         placeholder=''
                         step="0.01"
                         className="w-24 px-2 py-1 border border-gray-300 text-gray-800 rounded text-right text-sm"
                       />
                     </div>
-                    <div className="flex justify-between text-lg font-bold border-t pt-2">
-                      <span className="text-gray-800">Final Total</span>
-                      <span className="text-pink-600">₹{finalTotal}</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-black">Total Security</span>
+                      <span className="font-medium text-gray-800">₹{totalSecurity}</span>
+                    </div>
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-black">Security Discount</span>
+                      <input
+                        type="number"
+                        value={formData.securityDiscount}
+                        onChange={(e) => setFormData({ ...formData, securityDiscount: e.target.value })}
+                        min="0"
+                        placeholder=''
+                        step="0.01"
+                        className="w-24 px-2 py-1 border border-gray-300 text-gray-800 rounded text-right text-sm"
+                      />
+                    </div>
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-black font-medium">Advance Payment *</span>
+                      <input
+                        type="number"
+                        value={formData.advancePayment}
+                        onChange={(e) => setFormData({ ...formData, advancePayment: e.target.value })}
+                        min="1"
+                        placeholder='Required'
+                        step="0.01"
+                        required
+                        className="w-24 px-2 py-1 border border-red-300 text-gray-800 rounded text-right text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex justify-between font-bold border-t pt-2">
+                      <span className="text-gray-800">Total (Rent - Rent Disc + Security - Security Disc)</span>
+                      <span className="text-gray-800">₹{totalAmount}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold">
+                      <span className="text-green-600">Balance Amount</span>
+                      <span className="text-green-600">₹{balanceAmount}</span>
                     </div>
                   </div>
                 </>

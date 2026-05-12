@@ -14,7 +14,10 @@ interface RentalItem {
   category: string;
   image: string;
   rentPrice: number;
+  halfRentPrice: number;
   securityDeposit: number;
+  halfSecurityDeposit: number;
+  supportsHalfPricing: boolean;
   status: 'available' | 'booked' | 'running';
 }
 
@@ -43,7 +46,10 @@ export default function ItemsManagement() {
     category: categories[0],
     image: '',
     rentPrice: '',
+    halfRentPrice: '',
     securityDeposit: '',
+    halfSecurityDeposit: '',
+    supportsHalfPricing: false,
     status: 'available' as 'available' | 'booked' | 'running',
   });
 
@@ -97,7 +103,10 @@ export default function ItemsManagement() {
       category: item.category,
       image: item.image,
       rentPrice: item.rentPrice.toString(),
+      halfRentPrice: item.halfRentPrice.toString(),
       securityDeposit: item.securityDeposit.toString(),
+      halfSecurityDeposit: item.halfSecurityDeposit.toString(),
+      supportsHalfPricing: item.supportsHalfPricing,
       status: item.status,
     });
     setShowModal(true);
@@ -110,7 +119,10 @@ export default function ItemsManagement() {
       const payload = {
         ...formData,
         rentPrice: parseFloat(formData.rentPrice),
+        halfRentPrice: parseFloat(formData.halfRentPrice),
         securityDeposit: parseFloat(formData.securityDeposit),
+        halfSecurityDeposit: parseFloat(formData.halfSecurityDeposit),
+        supportsHalfPricing: formData.supportsHalfPricing,
       };
 
       if (editingItem) {
@@ -137,7 +149,10 @@ export default function ItemsManagement() {
         category: categories[0],
         image: '',
         rentPrice: '',
+        halfRentPrice: '',
         securityDeposit: '',
+        halfSecurityDeposit: '',
+        supportsHalfPricing: false,
         status: 'available',
       });
     } catch (error: any) {
@@ -196,7 +211,10 @@ export default function ItemsManagement() {
                 category: categories[0],
                 image: '',
                 rentPrice: '',
+                halfRentPrice: '',
                 securityDeposit: '',
+                halfSecurityDeposit: '',
+                supportsHalfPricing: false,
                 status: 'available',
               });
               setShowModal(true);
@@ -209,71 +227,77 @@ export default function ItemsManagement() {
         </div>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Code</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rent Price</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Deposit</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {items.map(item => (
-                <tr key={item._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.itemCode}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{item.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{item.category}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">₹{item.rentPrice}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">₹{item.securityDeposit}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/items/${item._id}`}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
-                        title="View Item Details"
-                      >
-                        <span className="text-xs">View</span>
-                        <Eye className="w-4 h-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2"
-                        title="Edit Item"
-                      >
-                        <span className="text-xs">Edit</span>
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
-                        title="Delete Item"
-                      >
-                        <span className="text-xs">Delete</span>
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Code</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rent Price</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Half Rent</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Security</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Half Security</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {items.map(item => (
+                  <tr key={item._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.itemCode}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{item.name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{item.category}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.rentPrice}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.halfRentPrice}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.securityDeposit}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.halfSecurityDeposit}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/items/${item._id}`}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
+                          title="View Item Details"
+                        >
+                          <span className="text-xs">View</span>
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2"
+                          title="Edit Item"
+                        >
+                          <span className="text-xs">Edit</span>
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                          title="Delete Item"
+                        >
+                          <span className="text-xs">Delete</span>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-          {items.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📦</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No items yet</h3>
-              <p className="text-gray-500">Add your first rental item to get started</p>
-            </div>
-          )}
+            {items.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📦</div>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No items yet</h3>
+                <p className="text-gray-500">Add your first rental item to get started</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -351,6 +375,20 @@ export default function ItemsManagement() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Half Rent Price (₹)</label>
+                  <input
+                    type="number"
+                    value={formData.halfRentPrice}
+                    onChange={(e) => setFormData({ ...formData, halfRentPrice: e.target.value })}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    placeholder="250"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Security Deposit (₹)</label>
                   <input
                     type="number"
@@ -363,19 +401,32 @@ export default function ItemsManagement() {
                     placeholder="2000"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Half Security Deposit (₹)</label>
+                  <input
+                    type="number"
+                    value={formData.halfSecurityDeposit}
+                    onChange={(e) => setFormData({ ...formData, halfSecurityDeposit: e.target.value })}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    placeholder="1000"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                >
-                  <option value="available">Available</option>
-                  <option value="booked">Booked</option>
-                  <option value="running">Running</option>
-                </select>
+              <div className="mt-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.supportsHalfPricing}
+                    onChange={(e) => setFormData({ ...formData, supportsHalfPricing: e.target.checked })}
+                    className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">This item supports half pricing</span>
+                </label>
               </div>
 
               <div className="flex gap-4 pt-4">

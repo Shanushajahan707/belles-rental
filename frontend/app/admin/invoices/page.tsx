@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { ArrowLeft, Download, FileText, Search, Plus, Filter } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Search, Plus, Filter, Eye } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 
 interface Invoice {
@@ -29,6 +29,8 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string>('');
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -65,21 +67,25 @@ export default function InvoicesPage() {
       const response = await api.get(`/invoices/download/${invoiceNumber}`, {
         responseType: 'blob',
       });
-
-      // Create download link
-      const blob = new Blob([response.data], {
-        type: 'application/pdf'
-      });
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${invoiceNumber}.pdf`;
+      link.setAttribute('download', `invoice-${invoiceNumber}.pdf`);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error: any) {
-      console.error('Error downloading invoice:', error);
+      toast.addToast({
+        message: 'Failed to download invoice',
+        type: 'error',
+      });
     }
+  };
+
+  const handleViewDetails = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setDetailsModalOpen(true);
   };
 
   const handleManualInvoiceGeneration = async () => {
@@ -92,18 +98,23 @@ export default function InvoicesPage() {
     }
 
     try {
+      console.log('here');
+
       const response = await api.post('/invoices/generate', { bookingId: selectedBookingId });
       toast.addToast({
         message: 'Invoice generated successfully!',
         type: 'success',
       });
+      console.log('reposns', response);
+
       setIsModalOpen(false);
       setSelectedBookingId('');
       fetchInvoices(); // Refresh invoice list
     } catch (error: any) {
       console.error('Error generating invoice:', error);
+      const errorMessage = error.response?.data?.error || 'Error generating invoice';
       toast.addToast({
-        message: 'Error generating invoice',
+        message: errorMessage,
         type: 'error',
       });
     }
@@ -246,7 +257,7 @@ export default function InvoicesPage() {
               <p className="text-gray-600">Try adjusting your search or filter criteria</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
               <table className="min-w-full bg-white rounded-lg overflow-hidden">
                 <thead className="bg-gray-50">
                   <tr>
@@ -275,6 +286,9 @@ export default function InvoicesPage() {
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         ₹{invoice.totalAmount}
+                        <div className="text-xs text-gray-500">
+                          {/* <p>Total: Rent + Security - Discounts - Advance</p> */}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-black">
                         {new Date(invoice.createdAt).toLocaleDateString('en-IN', {
@@ -285,13 +299,14 @@ export default function InvoicesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
+                        
                           <button
                             onClick={() => handleDownloadInvoice(invoice.invoiceNumber)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
                             title="Download PDF Invoice"
                           >
                             <Download className="w-4 h-4" />
-                            PDF
+                            Download
                           </button>
                           <button
                             onClick={() => router.push(`/booking-confirmation?bookingNumber=${invoice.bookingNumber}`)}
@@ -309,6 +324,9 @@ export default function InvoicesPage() {
               </table>
             </div>
           )}
+
+          {/* Invoice Details Modal */}
+       
         </div>
       </div>
     </div>

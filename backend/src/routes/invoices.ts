@@ -3,9 +3,14 @@ import { authenticate } from '../middleware/auth';
 import { InvoiceController } from '../controllers/InvoiceController';
 import { InvoiceService } from '../services/InvoiceService';
 
-const router=Router()
-const invoiceService=new InvoiceService()
+const router = Router();
+const invoiceService = new InvoiceService();
 const invoiceController = new InvoiceController(invoiceService);
+
+// Test route to verify invoice routes are working
+router.get('/test', (req, res) => {
+  res.json({ message: 'Invoice routes are working!' });
+});
 
 // Generate invoice for a booking
 router.post('/generate', authenticate, (req, res) => {

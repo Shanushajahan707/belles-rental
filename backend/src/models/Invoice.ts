@@ -10,16 +10,20 @@ export interface IInvoice extends Document {
     itemName: string;
     itemCode: string;
     rentPrice: number;
-    deposit: number;
+    security: number;
     quantity: number;
+    priceType?: 'full' | 'half';
   }[];
   bookingNumber: string;
   startDate: string;
   returnDate: string;
   totalRent: number;
-  totalDeposit: number;
-  discount: number;
+  totalSecurity: number;
+  rentDiscount: number;
+  securityDiscount: number;
+  advancePayment: number;
   totalAmount: number;
+  balanceAmount: number;
   shopName: string;
   shopAddress: string;
   shopPhone: string;
@@ -41,7 +45,7 @@ const InvoiceItemSchema: Schema = new Schema({
     type: Number,
     required: true,
   },
-  deposit: {
+  security: {
     type: Number,
     required: true,
   },
@@ -49,6 +53,11 @@ const InvoiceItemSchema: Schema = new Schema({
     type: Number,
     required: true,
     default: 1,
+  },
+  priceType: {
+    type: String,
+    enum: ['full', 'half'],
+    default: 'full',
   },
 });
 
@@ -67,7 +76,7 @@ const InvoiceSchema: Schema = new Schema(
     customerName: {
       type: String,
       required: true,
-    trim: true,
+      trim: true,
     },
     customerPhone: {
       type: String,
@@ -100,18 +109,35 @@ const InvoiceSchema: Schema = new Schema(
       required: true,
       min: 0,
     },
-    totalDeposit: {
+    totalSecurity: {
       type: Number,
       required: true,
       min: 0,
     },
-    discount: {
+    rentDiscount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    securityDiscount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    advancePayment: {
       type: Number,
       required: true,
       min: 0,
       default: 0,
     },
     totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    balanceAmount: {
       type: Number,
       required: true,
       min: 0,

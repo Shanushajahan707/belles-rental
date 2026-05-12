@@ -6,8 +6,8 @@ import authRoutes from './routes/auth';
 import itemRoutes from './routes/items';
 import bookingRoutes from './routes/bookings';
 import publicRoutes from './routes/public';
-
 import todayBookingsRoutes from './routes/todayBookings';
+import invoiceRoutes from './routes/invoices';
 
 dotenv.config();
 
@@ -24,9 +24,8 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/today-bookings', todayBookingsRoutes);
 
-// Add invoice routes
-import invoiceRoutes from './routes/invoices';
 app.use('/api/invoices', invoiceRoutes);
+console.log('Invoice routes loaded');
 
 app.get('/', (req, res) => {
   res.json({ message: 'Belles Avenue Rental API' });

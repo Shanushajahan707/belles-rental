@@ -5,7 +5,8 @@ export interface IBookingItem {
   itemName: string;
   itemCode: string;
   rentPrice: number;
-  deposit: number;
+  security: number;
+  priceType?: 'full' | 'half';
 }
 
 export interface IBooking extends Document {
@@ -17,13 +18,17 @@ export interface IBooking extends Document {
   startDate: Date;
   returnDate: Date;
   actualReturnDate?: Date;
-  discount: number;
+  rentDiscount: number;
+  securityDiscount: number;
+  advancePayment: number;
   totalAmount: number;
+  balanceAmount: number;
   status: 'booked' | 'running' | 'completed' | 'overdue';
   createdBy: string; // Admin user who created the booking
   createdAt: Date;
   updatedAt: Date;
   checkedIn?: boolean;
+  note?: string; // Admin-only note for additional booking information
 }
 
 const BookingItemSchema: Schema = new Schema({
@@ -44,9 +49,14 @@ const BookingItemSchema: Schema = new Schema({
     type: Number,
     required: true,
   },
-  deposit: {
+  security: {
     type: Number,
     required: true,
+  },
+  priceType: {
+    type: String,
+    enum: ['full', 'half'],
+    default: 'full',
   },
 });
 
@@ -88,12 +98,27 @@ const BookingSchema: Schema = new Schema(
     actualReturnDate: {
       type: Date,
     },
-    discount: {
+    rentDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    securityDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    advancePayment: {
       type: Number,
       default: 0,
       min: 0,
     },
     totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    balanceAmount: {
       type: Number,
       required: true,
       min: 0,
@@ -110,6 +135,10 @@ const BookingSchema: Schema = new Schema(
     checkedIn: {
       type: Boolean,
       default: false,
+    },
+    note: {
+      type: String,
+      trim: true,
     },
   },
   {

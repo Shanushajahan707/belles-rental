@@ -28,12 +28,15 @@ export class BookingService {
     customerName: string;
     phone: string;
     address: string;
-    items: { itemId: string; rentPrice: number; deposit: number }[];
+    items: { itemId: string; rentPrice: number; security: number }[];
     startDate: Date;
     returnDate: Date;
-    discount: number;
+    rentDiscount: number;
+    securityDiscount: number;
+    advancePayment: number;
     bookingNumber?: string; // Optional - admin can provide manual booking number
     createdBy: string; // Admin user who created the booking
+    note?: string; // Admin-only note for additional booking information
   }): Promise<IBooking> {
     const bookingItems: IBookingItem[] = [];
     const newStartDate = new Date(bookingData.startDate);
@@ -42,7 +45,17 @@ export class BookingService {
     today.setHours(0, 0, 0, 0);
 
     // Use manual booking number if provided, otherwise generate one
-    const bookingNumber = bookingData.bookingNumber || await this.generateBookingNumber();
+    let bookingNumber: string;
+    if (bookingData.bookingNumber) {
+      // Check if booking number already exists
+      const existingBooking = await this.bookingRepository.findByBookingNumber(bookingData.bookingNumber);
+      if (existingBooking) {
+        throw new Error(`Booking number ${bookingData.bookingNumber} already exists. Please use a different number or leave empty to auto-generate.`);
+      }
+      bookingNumber = bookingData.bookingNumber;
+    } else {
+      bookingNumber = await this.generateBookingNumber();
+    }
 
     // Validate date ranges
     if (isNaN(newStartDate.getTime()) || isNaN(newReturnDate.getTime())) {
@@ -100,11 +113,97 @@ export class BookingService {
           console.log('Date overlap check:', newStart, '<', existingEnd, '&&', newEnd, '>', existingStart, '=', newStart < existingEnd && newEnd > existingStart);
 
           if (newStart < existingEnd && newEnd > existingStart) {
-            // Only prevent same user from booking exact same dates
-            if (existingBooking.customerName === bookingData.customerName && existingBooking.phone === bookingData.phone) {
-              throw new Error(`You have already booked item ${rentalItem.itemCode} from ${existingBooking.startDate} to ${existingBooking.returnDate}`);
-            } else {
-              throw new Error(`Item ${rentalItem.itemCode} is already booked from ${existingBooking.startDate} to ${existingBooking.returnDate}`);
+            // Check if this is the same pricing type or if item doesn't support both pricing types
+            const existingItem = existingBooking.items.find((existingItem: any) =>
+              (existingItem.itemId?.toString() === item.itemId.toString()) ||
+              (existingItem.itemId?._id?.toString() === item.itemId.toString())
+            );
+
+            const existingPriceType = existingItem?.priceType || 'full';
+            const newPriceType = (item as any).priceType || 'full';
+
+            // If the item doesn't support half pricing, use the original logic
+            if (!rentalItem.supportsHalfPricing) {
+              if (existingBooking.customerName === bookingData.customerName && existingBooking.phone === bookingData.phone) {
+                const priceTypeText = existingPriceType === 'half' ? ' at half price' : ' at full price';
+                throw new Error(`You have already booked item ${rentalItem.itemCode}${priceTypeText} from ${existingBooking.startDate} to ${existingBooking.returnDate}`);
+              } else {
+                const priceTypeText = existingPriceType === 'half' ? ' at half price' : ' at full price';
+                throw new Error(`Item ${rentalItem.itemCode}${priceTypeText} is already booked from ${existingBooking.startDate} to ${existingBooking.returnDate}`);
+              }
+            }
+
+            // For items that support half pricing, check inventory logic
+            // Calculate total units booked during the overlapping period
+            let totalUnitsBooked = 0;
+            const overlappingBookings = existingBookings.filter(booking => {
+              if (booking.status !== 'booked' && booking.status !== 'running') return false;
+
+              const bookingStart = new Date(Date.UTC(
+                new Date(booking.startDate).getFullYear(),
+                new Date(booking.startDate).getMonth(),
+                new Date(booking.startDate).getDate()
+              ));
+              const bookingEnd = new Date(Date.UTC(
+                new Date(booking.returnDate).getFullYear(),
+                new Date(booking.returnDate).getMonth(),
+                new Date(booking.returnDate).getDate()
+              ));
+
+              return newStart < bookingEnd && newEnd > bookingStart;
+            });
+
+            // Calculate units needed for existing overlapping bookings
+            console.log(`Checking inventory for item ${rentalItem.itemCode}, new booking: ${newPriceType}`);
+            console.log('Existing overlapping bookings:', overlappingBookings.map(b => ({
+              bookingNumber: b.bookingNumber,
+              customerName: b.customerName,
+              items: b.items.map(i => ({ priceType: i.priceType }))
+            })));
+
+            for (const overlappingBooking of overlappingBookings) {
+              const overlappingItem = overlappingBooking.items.find((overlappingItem: any) =>
+                (overlappingItem.itemId?.toString() === item.itemId.toString()) ||
+                (overlappingItem.itemId?._id?.toString() === item.itemId.toString())
+              );
+
+              if (overlappingItem) {
+                const overlappingPriceType = overlappingItem?.priceType || 'full';
+                const unitsToAdd = overlappingPriceType === 'full' ? 2 : 1;
+                totalUnitsBooked += unitsToAdd;
+                console.log(`Found overlapping booking: ${overlappingBooking.bookingNumber}, item: ${rentalItem.itemCode}, type: ${overlappingPriceType}, units: ${unitsToAdd}, total so far: ${totalUnitsBooked}`);
+              }
+            }
+
+            // Calculate units needed for new booking
+            const newUnitsNeeded = newPriceType === 'full' ? 2 : 1;
+
+            console.log(`Final calculation - Total units booked: ${totalUnitsBooked}, New units needed: ${newUnitsNeeded}, Available: ${2 - totalUnitsBooked}`);
+
+            // Check if enough units are available (total units = 2 for items supporting half pricing)
+            if (totalUnitsBooked + newUnitsNeeded > 2) {
+              // Check if it's the same customer trying to double-book
+              const sameCustomerBooking = overlappingBookings.find(booking =>
+                booking.customerName === bookingData.customerName &&
+                booking.phone === bookingData.phone
+              );
+
+              if (sameCustomerBooking) {
+                const priceTypeText = newPriceType === 'half' ? ' at half price' : ' at full price';
+                throw new Error(`You have already booked item ${rentalItem.itemCode}${priceTypeText} from ${sameCustomerBooking.startDate} to ${sameCustomerBooking.returnDate}`);
+              } else {
+                // Determine what's actually available
+                const availableUnits = 2 - totalUnitsBooked;
+                let availableText = '';
+                if (availableUnits === 0) {
+                  availableText = 'This item is completely booked';
+                } else if (availableUnits === 1) {
+                  availableText = 'Only one part of this item is available';
+                }
+
+                const requestedText = newPriceType === 'half' ? 'one part' : 'the complete item';
+                throw new Error(`Cannot book ${rentalItem.itemCode}. ${availableText} for these dates, but you tried to book ${requestedText}.`);
+              }
             }
           }
         }
@@ -115,13 +214,25 @@ export class BookingService {
         itemName: rentalItem.name,
         itemCode: rentalItem.itemCode,
         rentPrice: item.rentPrice,
-        deposit: item.deposit,
+        security: item.security,
+        priceType: (item as any).priceType || 'full',
       });
     }
 
+    // Validate advance payment requirement
+    if (!bookingData.advancePayment || bookingData.advancePayment <= 0) {
+      throw new Error('Advance payment is required to create a booking. Please enter an advance payment amount.');
+    }
+
     const totalRent = bookingItems.reduce((sum, item) => sum + item.rentPrice, 0);
-    const totalDeposit = bookingItems.reduce((sum, item) => sum + item.deposit, 0);
-    const totalAmount = totalRent + totalDeposit - bookingData.discount;
+    const totalSecurity = bookingItems.reduce((sum, item) => sum + item.security, 0);
+    const rentDiscount = bookingData.rentDiscount || 0;
+    const securityDiscount = bookingData.securityDiscount || 0;
+    const advancePayment = bookingData.advancePayment || 0;
+    const totalRentAfterDiscount = totalRent - rentDiscount;
+    const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
+    const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+    const balanceAmount = totalAmount - advancePayment;
 
     const booking = await this.bookingRepository.create({
       bookingNumber: bookingNumber,
@@ -131,10 +242,14 @@ export class BookingService {
       items: bookingItems,
       startDate: bookingData.startDate,
       returnDate: bookingData.returnDate,
-      discount: bookingData.discount,
+      rentDiscount,
+      securityDiscount,
+      advancePayment,
       totalAmount,
+      balanceAmount,
       status: 'booked',
       createdBy: bookingData.createdBy,
+      note: bookingData.note,
     });
 
     for (const item of bookingItems) {
@@ -145,6 +260,131 @@ export class BookingService {
   }
 
   async updateBooking(id: string, bookingData: Partial<IBooking>): Promise<IBooking | null> {
+    // Get the existing booking
+    const existingBooking = await this.bookingRepository.findById(id);
+    if (!existingBooking) {
+      throw new Error('Booking not found');
+    }
+
+    // If updating items, dates, or priceType, run inventory validation
+    if (bookingData.items || bookingData.startDate || bookingData.returnDate) {
+      const updatedStartDate = new Date(bookingData.startDate || existingBooking.startDate);
+      const updatedReturnDate = new Date(bookingData.returnDate || existingBooking.returnDate);
+      const updatedItems = bookingData.items || existingBooking.items;
+
+      // Validate date ranges
+      if (isNaN(updatedStartDate.getTime()) || isNaN(updatedReturnDate.getTime())) {
+        throw new Error('Invalid date format. Please use valid dates.');
+      }
+
+      if (updatedStartDate > updatedReturnDate) {
+        throw new Error('Start date cannot be after return date.');
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (updatedStartDate < today) {
+        throw new Error('Start date cannot be in the past.');
+      }
+
+      // Check inventory conflicts for each item
+      for (const item of updatedItems) {
+        const rentalItem = await this.rentalItemRepository.findById(item.itemId.toString());
+        if (!rentalItem) {
+          throw new Error(`Item with ID ${item.itemId} not found`);
+        }
+
+        // Check for date overlaps with existing bookings (excluding current booking)
+        const existingBookings = await this.bookingRepository.findByItemId(item.itemId.toString());
+        const otherBookings = existingBookings.filter(booking =>
+          booking._id.toString() !== id &&
+          (booking.status === 'booked' || booking.status === 'running')
+        );
+
+        // Get the current booking's original item details to compare pricing types
+        const originalItem = existingBooking.items.find((originalItem: any) =>
+          (originalItem.itemId?.toString() === item.itemId.toString()) ||
+          (originalItem.itemId?._id?.toString() === item.itemId.toString())
+        );
+        const originalPriceType = originalItem?.priceType || 'full';
+        const newPriceType = (item as any).priceType || 'full';
+
+        for (const otherBooking of otherBookings) {
+          const otherStartDate = new Date(otherBooking.startDate);
+          const otherReturnDate = new Date(otherBooking.returnDate);
+
+          const newStart = new Date(Date.UTC(updatedStartDate.getFullYear(), updatedStartDate.getMonth(), updatedStartDate.getDate()));
+          const newEnd = new Date(Date.UTC(updatedReturnDate.getFullYear(), updatedReturnDate.getMonth(), updatedReturnDate.getDate()));
+          const otherStart = new Date(Date.UTC(otherStartDate.getFullYear(), otherStartDate.getMonth(), otherStartDate.getDate()));
+          const otherEnd = new Date(Date.UTC(otherReturnDate.getFullYear(), otherReturnDate.getMonth(), otherReturnDate.getDate()));
+
+          if (newStart < otherEnd && newEnd > otherStart) {
+            const otherItem = otherBooking.items.find((otherItem: any) =>
+              (otherItem.itemId?.toString() === item.itemId.toString()) ||
+              (otherItem.itemId?._id?.toString() === item.itemId.toString())
+            );
+
+            const otherPriceType = otherItem?.priceType || 'full';
+
+            // If the item doesn't support half pricing, use the original logic
+            if (!rentalItem.supportsHalfPricing) {
+              throw new Error(`Item ${rentalItem.itemCode} at ${newPriceType} price conflicts with existing booking from ${otherBooking.startDate} to ${otherBooking.returnDate}`);
+            }
+
+            // For items supporting half pricing, check inventory
+            let totalUnitsBooked = 0;
+            const overlappingBookings = otherBookings.filter(booking => {
+              const bookingStart = new Date(Date.UTC(
+                new Date(booking.startDate).getFullYear(),
+                new Date(booking.startDate).getMonth(),
+                new Date(booking.startDate).getDate()
+              ));
+              const bookingEnd = new Date(Date.UTC(
+                new Date(booking.returnDate).getFullYear(),
+                new Date(booking.returnDate).getMonth(),
+                new Date(booking.returnDate).getDate()
+              ));
+              return newStart < bookingEnd && newEnd > bookingStart;
+            });
+
+            for (const overlappingBooking of overlappingBookings) {
+              const overlappingItem = overlappingBooking.items.find((overlappingItem: any) =>
+                (overlappingItem.itemId?.toString() === item.itemId.toString()) ||
+                (overlappingItem.itemId?._id?.toString() === item.itemId.toString())
+              );
+              if (overlappingItem) {
+                const overlappingPriceType = overlappingItem?.priceType || 'full';
+                totalUnitsBooked += overlappingPriceType === 'full' ? 2 : 1;
+              }
+            }
+
+            const newUnitsNeeded = newPriceType === 'full' ? 2 : 1;
+            if (totalUnitsBooked + newUnitsNeeded > 2) {
+              throw new Error(`Cannot update booking for ${rentalItem.itemCode}. Insufficient inventory available for the selected dates.`);
+            }
+          }
+        }
+      }
+    }
+
+    // Recalculate totals if items are being updated
+    if (bookingData.items) {
+      const totalRent = bookingData.items.reduce((sum, item) => sum + item.rentPrice, 0);
+      const totalSecurity = bookingData.items.reduce((sum, item) => sum + item.security, 0);
+      const rentDiscount = bookingData.rentDiscount || existingBooking.rentDiscount || 0;
+      const securityDiscount = bookingData.securityDiscount || existingBooking.securityDiscount || 0;
+      const advancePayment = bookingData.advancePayment || existingBooking.advancePayment || 0;
+
+      const totalRentAfterDiscount = totalRent - rentDiscount;
+      const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
+      const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+      const balanceAmount = totalAmount - advancePayment;
+
+      bookingData.totalAmount = totalAmount;
+      bookingData.balanceAmount = balanceAmount;
+    }
+
+    // Proceed with the update
     return this.bookingRepository.update(id, bookingData);
   }
 
@@ -330,5 +570,36 @@ export class BookingService {
     } catch (error: any) {
       throw new Error(`Error fetching booking by number: ${error.message}`);
     }
+  }
+
+  async getItemEarnings(itemId: string): Promise<number> {
+    const bookings = await this.bookingRepository.findByItemId(itemId);
+
+    return bookings
+      .filter(booking => booking.status === 'completed')
+      .reduce((total, booking) => {
+        // Find this specific item in the booking
+        const bookingItem = booking.items?.find(item => {
+          const itemItemId = typeof item.itemId === 'string'
+            ? item.itemId
+            : item.itemId?._id?.toString() || item.itemId?.toString();
+          return itemItemId === itemId;
+        });
+
+        if (!bookingItem) return total;
+
+        // Calculate individual item earnings: item rent - proportionate discount
+        const itemRent = bookingItem.rentPrice || 0;
+        const itemTotal = itemRent + (bookingItem.security || 0);
+
+        // Calculate proportionate discount for this item
+        const bookingTotalWithoutDiscount = booking.totalAmount + booking.rentDiscount + booking.securityDiscount;
+        const totalDiscount = booking.rentDiscount + booking.securityDiscount;
+        const discountProportion = (itemTotal / bookingTotalWithoutDiscount) * totalDiscount;
+
+        // Individual earnings: rent - proportionate discount
+        const individualEarnings = itemRent - discountProportion;
+        return total + Math.max(0, individualEarnings); // Ensure non-negative
+      }, 0);
   }
 }

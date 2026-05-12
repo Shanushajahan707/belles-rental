@@ -13,7 +13,14 @@ interface Booking {
   customerName: string;
   phone: string;
   address: string;
-  items: any[];
+  items: {
+    itemId: any;
+    itemName: string;
+    itemCode: string;
+    rentPrice: number;
+    security: number;
+    priceType?: 'full' | 'half';
+  }[];
   startDate: string;
   returnDate: string;
   actualReturnDate?: string;
@@ -22,6 +29,7 @@ interface Booking {
   status: 'booked' | 'running' | 'completed' | 'overdue';
   createdBy: string;
   createdAt: string;
+  note?: string;
 }
 
 export default function BookingsManagement() {
@@ -178,7 +186,7 @@ export default function BookingsManagement() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           {/* Mobile Card View */}
-          <div className="md:hidden">
+          <div className="md:hidden max-h-96 overflow-y-auto">
             {bookings.map(booking => (
               <div key={booking._id} className="border-b border-gray-200 p-4 space-y-3">
                 <div className="flex justify-between items-start">
@@ -198,7 +206,13 @@ export default function BookingsManagement() {
                     <p className="font-medium text-gray-700">Items:</p>
                     {booking.items.map((item: any, index: number) => (
                       <div key={index} className="text-gray-600">
-                        • {item.itemId?.name || item.itemName || 'Unknown Item'}
+                        • {item.itemName || item.itemId?.name || 'Unknown Item'}
+                        {item.priceType && (
+                          <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded ${item.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                            {item.priceType === 'half' ? 'Half' : 'Full'}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -216,45 +230,60 @@ export default function BookingsManagement() {
 
                   <div className="flex justify-between items-center">
                     <p className="font-bold text-gray-900">₹{booking.totalAmount}</p>
-                    <div className="flex gap-2">
-                      {booking.status === 'booked' && (
-                        <>
-                          <Link href={`/admin/bookings/${booking._id}/edit`} className="p-2 bg-gray-100 text-gray-600 rounded-lg">
-                            <Edit className="w-4 h-4" />
-                          </Link>
-                          <button onClick={() => handleStartRental(booking._id)} className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                            <Play className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteBooking(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                      {booking.status === 'running' && (
-                        <>
-                          <button onClick={() => handleCompleteRental(booking._id)} className="p-2 bg-green-100 text-green-600 rounded-lg">
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleStopRental(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
-                            <Square className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                      {booking.status === 'overdue' && (
+                    <div className="text-xs text-gray-500">
+                      <p>Total: Rent + Security - Discounts - Advance</p>
+                    </div>
+                  </div>
+
+                  {booking.note && (
+                    <div className="bg-blue-50 p-2 rounded-lg">
+                      <p className="text-xs font-medium text-blue-800 mb-1">Admin Note:</p>
+                      <p className="text-xs text-blue-700">{booking.note}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    {booking.status === 'booked' && (
+                      <>
+                        <Link href={`/admin/bookings/${booking._id}/edit`} className="p-2 bg-gray-100 text-gray-600 rounded-lg">
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        <button onClick={() => handleStartRental(booking._id)} className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                          <Play className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteBooking(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    {booking.status === 'running' && (
+                      <>
                         <button onClick={() => handleCompleteRental(booking._id)} className="p-2 bg-green-100 text-green-600 rounded-lg">
                           <CheckCircle className="w-4 h-4" />
                         </button>
-                      )}
-                    </div>
+                        <button onClick={() => handleStopRental(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
+                          <Square className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteBooking(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    {booking.status === 'overdue' && (
+                      <button onClick={() => handleCompleteRental(booking._id)} className="p-2 bg-green-100 text-green-600 rounded-lg">
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
+
             ))}
           </div>
 
           {/* Desktop Table View */}
           <div className="hidden md:block">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
               <table className="w-full min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
@@ -266,6 +295,7 @@ export default function BookingsManagement() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -299,8 +329,14 @@ export default function BookingsManagement() {
                       <td className="px-4 py-3">
                         <div className="text-sm text-gray-700">
                           {booking.items.map((item: any, index: number) => (
-                            <div key={index}>
-                              {item.itemId?.name || item.itemName || 'Unknown Item'}
+                            <div key={index} className="flex items-center gap-2">
+                              {item.itemName || item.itemId?.name || 'Unknown Item'}
+                              {item.priceType && (
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${item.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                  {item.priceType === 'half' ? 'Half' : 'Full'}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -321,6 +357,17 @@ export default function BookingsManagement() {
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
                         ₹{booking.totalAmount}
+                      </td>
+                      <td className="px-4 py-3">
+                        {booking.note ? (
+                          <div className="max-w-xs">
+                            <p className="text-xs text-blue-700 truncate" title={booking.note}>
+                              {booking.note}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
@@ -398,7 +445,7 @@ export default function BookingsManagement() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

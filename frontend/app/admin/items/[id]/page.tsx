@@ -1,5 +1,7 @@
 'use client';
 
+// Item details page with earnings calculation
+
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -37,6 +39,7 @@ interface ItemStats {
   activeBookings: number;
   completedBookings: number;
   overdueBookings: number;
+  totalEarnings: number;
 }
 
 export default function ItemDetailPage() {
@@ -62,14 +65,17 @@ export default function ItemDetailPage() {
 
   const fetchData = async () => {
     try {
-      const [itemRes, bookingsRes, statsRes] = await Promise.all([
+      const [itemRes, bookingsRes, statsRes, earningsRes] = await Promise.all([
         api.get(`/items/${itemId}`),
         api.get(`/bookings/item/${itemId}`),
         api.get(`/bookings/item/${itemId}/stats`),
+        api.get(`/bookings/item/${itemId}/earnings`),
       ]);
       setItem(itemRes.data);
       setBookings(bookingsRes.data);
-      setStats(statsRes.data);
+
+      // Use backend-calculated earnings
+      setStats({ ...statsRes.data, totalEarnings: earningsRes.data.totalEarnings });
     } catch (error) {
       console.error('Error fetching data:', error);
       router.push('/admin/items');
@@ -119,7 +125,6 @@ export default function ItemDetailPage() {
   if (!item) {
     return null;
   }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
@@ -141,7 +146,17 @@ export default function ItemDetailPage() {
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
               <div className="h-64 bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
                 {item.image ? (
-                  <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                  <img
+                    src={item.image.includes('drive.google.com')
+                      ? `https://drive.google.com/thumbnail?id=${item.image.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
+                      : item.image
+                    }
+                    alt={item.name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/400x300.png?text=Image+Not+Available';
+                    }}
+                  />
                 ) : (
                   <div className="text-8xl">💎</div>
                 )}
@@ -149,7 +164,7 @@ export default function ItemDetailPage() {
               <div className="p-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{item.name}</h2>
                 <p className="text-lg text-gray-600 mb-4">{item.category}</p>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b">
                     <span className="text-gray-600">Item Code</span>
@@ -176,7 +191,7 @@ export default function ItemDetailPage() {
 
           <div className="lg:col-span-2">
             {stats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                 <div className="bg-white rounded-xl shadow-md p-4">
                   <div className="text-3xl font-bold text-gray-800">{stats.totalBookings}</div>
                   <div className="text-sm text-gray-600">Total Bookings</div>
@@ -193,6 +208,10 @@ export default function ItemDetailPage() {
                   <div className="text-3xl font-bold text-red-600">{stats.overdueBookings}</div>
                   <div className="text-sm text-gray-600">Overdue</div>
                 </div>
+                <div className="bg-white rounded-xl shadow-md p-4">
+                  <div className="text-3xl font-bold text-purple-600">₹{stats.totalEarnings.toLocaleString()}</div>
+                  <div className="text-sm text-gray-600">Total Earnings</div>
+                </div>
               </div>
             )}
 
@@ -200,8 +219,8 @@ export default function ItemDetailPage() {
               <div className="p-6 border-b">
                 <h3 className="text-xl font-bold text-gray-800">Booking History</h3>
               </div>
-              
-              <div className="divide-y divide-gray-200">
+
+              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
                 {bookings.length === 0 ? (
                   <div className="p-12 text-center">
                     <div className="text-6xl mb-4">📋</div>
@@ -217,6 +236,11 @@ export default function ItemDetailPage() {
                           <div>
                             <h4 className="font-semibold text-gray-800">{booking.customerName}</h4>
                             <p className="text-sm text-gray-600">{booking.phone}</p>
+                            {booking.items && booking.items.length > 1 && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                Items: {booking.items.map(item => `${item.itemCode} (${item.itemName})`).join(', ')}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>

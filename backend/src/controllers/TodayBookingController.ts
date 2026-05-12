@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Booking from '../models/Booking';
+import RentalItem from '../models/RentalItem';
 
 // GET /bookings/today-unchecked-in
 export const getTodayUncheckedInBookings = async (req: Request, res: Response) => {
@@ -17,16 +18,42 @@ export const getTodayUncheckedInBookings = async (req: Request, res: Response) =
       .sort({ startDate: 1 })
       .lean();
 
-    // Only send necessary fields, including itemCode
-    const result = bookings.map((b: any) => ({
-      _id: b._id,
-      customerName: b.customerName,
-      phone: b.phone,
-      startDate: b.startDate,
-      items: (b.items || []).map((i: any) => ({
-        itemName: i.itemName,
-        itemCode: i.itemCode,
-      })),
+    // Process bookings to ensure item details are included
+    const result = await Promise.all(bookings.map(async (b: any) => {
+      const items = await Promise.all((b.items || []).map(async (i: any) => {
+        // If itemName and itemCode exist, use them
+        if (i.itemName && i.itemCode) {
+          return {
+            itemName: i.itemName,
+            itemCode: i.itemCode,
+            priceType: i.priceType || 'full',
+          };
+        }
+
+        // Otherwise, fetch the rental item details
+        try {
+          const rentalItem = await RentalItem.findById(i.itemId);
+          return {
+            itemName: rentalItem?.name || 'Unknown Item',
+            itemCode: rentalItem?.itemCode || 'N/A',
+            priceType: i.priceType || 'full',
+          };
+        } catch (error) {
+          return {
+            itemName: 'Unknown Item',
+            itemCode: 'N/A',
+            priceType: i.priceType || 'full',
+          };
+        }
+      }));
+
+      return {
+        _id: b._id,
+        customerName: b.customerName,
+        phone: b.phone,
+        startDate: b.startDate,
+        items,
+      };
     }));
 
     res.json({ bookings: result });

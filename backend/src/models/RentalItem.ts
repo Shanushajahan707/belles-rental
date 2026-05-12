@@ -6,7 +6,10 @@ export interface IRentalItem extends Document {
   category: string;
   image: string;
   rentPrice: number;
+  halfRentPrice: number;
   securityDeposit: number;
+  halfSecurityDeposit: number;
+  supportsHalfPricing: boolean;
   status: 'available' | 'booked' | 'running';
   createdAt: Date;
   updatedAt: Date;
@@ -40,10 +43,25 @@ const RentalItemSchema: Schema = new Schema(
       required: true,
       min: 0,
     },
+    halfRentPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
     securityDeposit: {
       type: Number,
       required: true,
       min: 0,
+    },
+    halfSecurityDeposit: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    supportsHalfPricing: {
+      type: Boolean,
+      required: true,
+      default: false,
     },
     status: {
       type: String,

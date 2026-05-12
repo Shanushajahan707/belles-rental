@@ -19,8 +19,11 @@ interface Booking {
   startDate: string;
   returnDate: string;
   actualReturnDate?: string;
-  discount: number;
+  rentDiscount: number;
+  securityDiscount: number;
+  advancePayment: number;
   totalAmount: number;
+  balanceAmount: number;
   status: 'booked' | 'running' | 'completed' | 'overdue';
   createdAt: string;
 }
@@ -37,9 +40,12 @@ interface Invoice {
   startDate: string;
   returnDate: string;
   totalRent: number;
-  totalDeposit: number;
-  discount: number;
+  totalSecurity: number;
+  rentDiscount: number;
+  securityDiscount: number;
+  advancePayment: number;
   totalAmount: number;
+  balanceAmount: number;
   shopName: string;
   shopAddress: string;
   shopPhone: string;
@@ -222,11 +228,17 @@ function BookingConfirmationContent() {
 
               <div className="space-y-2">
                 {booking.items.map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={index} className={`flex items-center justify-between p-4 rounded-lg ${item.priceType === 'half' && item.itemId?.supportsHalfPricing ? 'bg-green-50' : 'bg-gray-50'}`}>
                     <div>
-                      <p className="font-medium text-gray-900">{item.itemName}</p>
-                      <p className="text-sm text-gray-600">{item.itemCode}</p>
+                      <p className="font-medium text-gray-900">{item.itemName || item.itemId?.name || 'Unknown Item'}</p>
+                      <p className="text-sm text-gray-600">{item.itemCode || item.itemId?.itemCode || 'N/A'}</p>
                       <p className="text-sm text-gray-600">Rent: ₹{item.rentPrice}/day</p>
+                      <p className="text-sm text-gray-600">Security: ₹{item.security || 0}</p>
+                      {item.itemId?.supportsHalfPricing && (
+                        <p className={`text-xs font-medium ${item.priceType === 'half' ? 'text-green-600' : 'text-blue-600'}`}>
+                          {item.priceType === 'half' ? 'Half Price' : 'Full Price'}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
@@ -240,22 +252,40 @@ function BookingConfirmationContent() {
 
             {/* Total Amount */}
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-600">Subtotal:</p>
-                  <p className="text-2xl font-bold text-gray-900">₹{booking.totalAmount + booking.discount}</p>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Total Rent:</span>
+                  <span className="font-medium text-gray-600">₹{booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0)}</span>
                 </div>
-                <div className="text-right">
-                  {booking.discount > 0 && (
-                    <div>
-                      <p className="text-sm text-gray-600">Discount:</p>
-                      <p className="text-lg font-semibold text-red-600">-₹{booking.discount}</p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm text-gray-600">Total Amount:</p>
-                    <p className="text-2xl font-bold text-green-600">₹{booking.totalAmount}</p>
+                {booking.rentDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Rent Discount:</span>
+                    <span className="font-medium text-red-600">-₹{booking.rentDiscount}</span>
                   </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Total Security:</span>
+                  <span className="font-medium text-gray-600">₹{booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0)}</span>
+                </div>
+                {booking.securityDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Security Discount:</span>
+                    <span className="font-medium text-red-600">-₹{booking.securityDiscount}</span>
+                  </div>
+                )}
+                {booking.advancePayment > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Advance Payment:</span>
+                    <span className="font-medium text-green-600">-₹{booking.advancePayment}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span className="text-gray-800">Total Amount:</span>
+                  <span className="text-gray-800">₹{booking.totalAmount}</span>
+                </div>
+                <div className="flex justify-between text-xl font-bold">
+                  <span className="text-green-600">Balance Amount:</span>
+                  <span className="text-green-600">₹{booking.balanceAmount}</span>
                 </div>
               </div>
 

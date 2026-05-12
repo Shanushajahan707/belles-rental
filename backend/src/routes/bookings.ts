@@ -10,6 +10,7 @@ router.get('/dashboard/stats', authenticate, (req, res) => bookingController.get
 router.get('/fetchItems', authenticate, (req, res) => bookingController.getItems(req, res));
 router.get('/item/:itemId', authenticate, (req, res) => bookingController.getBookingHistoryByItemId(req, res));
 router.get('/item/:itemId/stats', authenticate, (req, res) => bookingController.getItemStats(req, res));
+router.get('/item/:itemId/earnings', authenticate, (req, res) => bookingController.getItemEarnings(req, res));
 router.get('/items', authenticate, (req, res) => bookingController.getItems(req, res));
 router.get('/number/:bookingNumber', authenticate, (req, res) => bookingController.getBookingByNumber(req, res));
 router.get('/:id', authenticate, (req, res) => bookingController.getBookingById(req, res));
