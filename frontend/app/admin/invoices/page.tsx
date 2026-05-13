@@ -237,8 +237,9 @@ export default function InvoicesPage() {
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-black"
               >
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
+                <option value="booked">Booked</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
                 <option value="overdue">Overdue</option>
               </select>
             </div>

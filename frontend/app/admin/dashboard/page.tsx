@@ -194,15 +194,7 @@ export default function AdminDashboard() {
         <h2 className="text-3xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
-              </div>
-              <span className="text-sm text-gray-500">Total Earnings</span>
-            </div>
-            <p className="text-3xl font-bold text-gray-800">₹{stats.totalEarnings.toLocaleString()}</p>
-          </div>
+        
 
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center justify-between mb-4">

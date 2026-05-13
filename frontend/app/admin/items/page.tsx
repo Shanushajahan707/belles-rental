@@ -10,6 +10,7 @@ import { useToast } from '@/components/Toast';
 interface RentalItem {
   _id: string;
   itemCode: string;
+  barcode: string;
   name: string;
   category: string;
   image: string;
@@ -17,6 +18,7 @@ interface RentalItem {
   halfRentPrice: number;
   securityDeposit: number;
   halfSecurityDeposit: number;
+  purchasePrice: number;
   supportsHalfPricing: boolean;
   status: 'available' | 'booked' | 'running';
 }
@@ -39,6 +41,9 @@ export default function ItemsManagement() {
   const [items, setItems] = useState<RentalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'booked' | 'running'>('all');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [editingItem, setEditingItem] = useState<RentalItem | null>(null);
   const [formData, setFormData] = useState({
     itemCode: '',
@@ -49,6 +54,8 @@ export default function ItemsManagement() {
     halfRentPrice: '',
     securityDeposit: '',
     halfSecurityDeposit: '',
+    barcode: '',
+    purchasePrice: '',
     supportsHalfPricing: false,
     status: 'available' as 'available' | 'booked' | 'running',
   });
@@ -99,6 +106,7 @@ export default function ItemsManagement() {
     setEditingItem(item);
     setFormData({
       itemCode: item.itemCode,
+      barcode: item.barcode,
       name: item.name,
       category: item.category,
       image: item.image,
@@ -106,6 +114,7 @@ export default function ItemsManagement() {
       halfRentPrice: item.halfRentPrice.toString(),
       securityDeposit: item.securityDeposit.toString(),
       halfSecurityDeposit: item.halfSecurityDeposit.toString(),
+      purchasePrice: item.purchasePrice.toString(),
       supportsHalfPricing: item.supportsHalfPricing,
       status: item.status,
     });
@@ -122,6 +131,7 @@ export default function ItemsManagement() {
         halfRentPrice: parseFloat(formData.halfRentPrice),
         securityDeposit: parseFloat(formData.securityDeposit),
         halfSecurityDeposit: parseFloat(formData.halfSecurityDeposit),
+        purchasePrice: parseFloat(formData.purchasePrice),
         supportsHalfPricing: formData.supportsHalfPricing,
       };
 
@@ -152,6 +162,8 @@ export default function ItemsManagement() {
         halfRentPrice: '',
         securityDeposit: '',
         halfSecurityDeposit: '',
+        barcode: '',
+        purchasePrice: '',
         supportsHalfPricing: false,
         status: 'available',
       });
@@ -177,6 +189,19 @@ export default function ItemsManagement() {
     }
   };
 
+  const filteredItems = items.filter((item) => {
+    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
+    const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
+    const search = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !search ||
+      item.name.toLowerCase().includes(search) ||
+      item.itemCode.toLowerCase().includes(search) ||
+      item.barcode.toLowerCase().includes(search);
+
+    return matchesStatus && matchesCategory && matchesSearch;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -201,7 +226,52 @@ export default function ItemsManagement() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-end mb-6">
+        <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label htmlFor="itemStatusFilter" className="text-sm font-medium text-gray-700">Status</label>
+          <select
+            id="itemStatusFilter"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+          >
+            <option value="all">All</option>
+            <option value="available">Available</option>
+            <option value="booked">Booked</option>
+            <option value="running">Running</option>
+          </select>
+          <label htmlFor="itemCategoryFilter" className="text-sm font-medium text-gray-700">Category</label>
+          <select
+            id="itemCategoryFilter"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+          >
+            <option value="all">All Categories</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by code, name, or barcode"
+            className="w-full min-w-[200px] rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+          />
+        </div>
+        <button
+          onClick={() => {
+            setFilterStatus('all');
+            setFilterCategory('all');
+            setSearchQuery('');
+          }}
+          className="inline-flex items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+        >
+          Reset Filters
+        </button>
+      </div>
+      <div className="flex justify-end mb-6">
           <button
             onClick={() => {
               setEditingItem(null);
@@ -214,6 +284,8 @@ export default function ItemsManagement() {
                 halfRentPrice: '',
                 securityDeposit: '',
                 halfSecurityDeposit: '',
+                barcode: '',
+                purchasePrice: '',
                 supportsHalfPricing: false,
                 status: 'available',
               });
@@ -232,8 +304,10 @@ export default function ItemsManagement() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Code</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Barcode</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Purchase</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rent Price</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Half Rent</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Security</th>
@@ -243,11 +317,13 @@ export default function ItemsManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {items.map(item => (
+                {filteredItems.map(item => (
                   <tr key={item._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.itemCode}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{item.barcode}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{item.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{item.category}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.purchasePrice}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">₹{item.rentPrice}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">₹{item.halfRentPrice}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">₹{item.securityDeposit}</td>
@@ -290,11 +366,11 @@ export default function ItemsManagement() {
               </tbody>
             </table>
 
-            {items.length === 0 && (
+            {filteredItems.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📦</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">No items yet</h3>
-                <p className="text-gray-500">Add your first rental item to get started</p>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No items match your filters</h3>
+                <p className="text-gray-500">Try clearing filters or adding more items.</p>
               </div>
             )}
           </div>
@@ -360,6 +436,32 @@ export default function ItemsManagement() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Barcode</label>
+                  <input
+                    type="text"
+                    value={formData.barcode}
+                    onChange={(e) => setFormData({ ...formData, barcode: e.target.value.toUpperCase() })}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    placeholder="e.g., BRC12345"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Purchase Price (₹)</label>
+                  <input
+                    type="number"
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    placeholder="15000"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Rent Price (₹)</label>
                   <input

@@ -69,7 +69,8 @@ export default function EditBookingPage() {
     advancePayment: '',
     bookingNumber: '',
     dealedStaff: '',
-    note: ''
+    note: '',
+    additionalCharges: ''
   });
 
   useEffect(() => {
@@ -114,7 +115,8 @@ export default function EditBookingPage() {
         advancePayment: bookingData.advancePayment?.toString() || '',
         bookingNumber: bookingData.bookingNumber || '',
         dealedStaff: bookingData.createdBy,
-        note: bookingData.note || ''
+        note: bookingData.note || '',
+        additionalCharges: bookingData.additionalCharges?.toString() || ''
       });
     } catch (error: any) {
       console.error('Error fetching booking:', error);
@@ -176,9 +178,10 @@ export default function EditBookingPage() {
   const rentDiscount = Number(formData.rentDiscount || '0') || 0;
   const securityDiscount = Number(formData.securityDiscount || '0') || 0;
   const advancePayment = Number(formData.advancePayment || '0') || 0;
+  const additionalCharges = Number(formData.additionalCharges || '0') || 0;
   const totalRentAfterDiscount = totalRent - rentDiscount;
   const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
-  const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+  const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount + additionalCharges;
   const balanceAmount = totalAmount - advancePayment;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -202,7 +205,8 @@ export default function EditBookingPage() {
         securityDiscount: Number(formData.securityDiscount),
         advancePayment: Number(formData.advancePayment),
         createdBy: formData.dealedStaff,
-        note: formData.note || undefined
+        note: formData.note || undefined,
+        additionalCharges: Number(formData.additionalCharges) || 0
       };
 
       await api.put(`/bookings/${params.id}`, bookingData);
@@ -546,8 +550,26 @@ export default function EditBookingPage() {
                         className="w-24 px-2 py-1 border border-red-300 text-gray-800 rounded text-right text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       />
                     </div>
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-black">Additional Charges</span>
+                      <input
+                        type="number"
+                        value={formData.additionalCharges}
+                        onChange={(e) => setFormData({ ...formData, additionalCharges: e.target.value })}
+                        min="0"
+                        placeholder='0'
+                        step="0.01"
+                        className="w-24 px-2 py-1 border border-gray-300 text-gray-800 rounded text-right text-sm"
+                      />
+                    </div>
+                    {additionalCharges > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-orange-600">Additional Charges</span>
+                        <span className="text-orange-600 font-medium">₹{additionalCharges}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-bold border-t pt-2">
-                      <span className="text-gray-800">Total (Rent - Rent Disc + Security - Security Disc)</span>
+                      <span className="text-gray-800">Total (Rent - Disc + Security - Disc + Addl. Charges)</span>
                       <span className="text-gray-800">₹{totalAmount}</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold">

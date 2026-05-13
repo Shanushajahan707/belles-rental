@@ -33,7 +33,7 @@ router.get('/', authenticate, (req, res) => {
 });
 
 // Download invoice as HTML
-router.get('/download/:invoiceNumber', (req, res) => {
+router.get('/download/:invoiceNumber', authenticate, (req, res) => {
   invoiceController.downloadInvoice(req, res);
 });
 

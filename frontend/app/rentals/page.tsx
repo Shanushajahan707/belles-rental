@@ -18,6 +18,14 @@ interface RentalItem {
   status: 'available' | 'booked' | 'running';
 }
 
+interface BookingInfo {
+  bookingNumber: string;
+  customerName: string;
+  startDate: string;
+  returnDate: string;
+  status: string;
+}
+
 const categories = [
   'All',
   'Antique Necklace (Choker)',
@@ -34,8 +42,10 @@ const categories = [
 export default function RentalsPage() {
   const [items, setItems] = useState<RentalItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<RentalItem[]>([]);
+  const [bookingInfo, setBookingInfo] = useState<{ [itemId: string]: BookingInfo }>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedStatus, setSelectedStatus] = useState('All');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,12 +54,35 @@ export default function RentalsPage() {
 
   useEffect(() => {
     filterItems();
-  }, [items, searchQuery, selectedCategory]);
+  }, [items, searchQuery, selectedCategory, selectedStatus]);
 
   const fetchItems = async () => {
     try {
       const response = await api.get('/items');
       setItems(response.data);
+
+      // Fetch booking info for booked/running items
+      const bookings: { [itemId: string]: BookingInfo } = {};
+      for (const item of response.data) {
+        if (item.status === 'booked' || item.status === 'running') {
+          try {
+            const bookingRes = await api.get(`/bookings/item/${item._id}`);
+            if (bookingRes.data && bookingRes.data.length > 0) {
+              const activeBooking = bookingRes.data[0]; // Get first booking
+              bookings[item._id] = {
+                bookingNumber: activeBooking.bookingNumber,
+                customerName: activeBooking.customerName,
+                startDate: activeBooking.startDate,
+                returnDate: activeBooking.returnDate,
+                status: activeBooking.status,
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching booking for item ${item._id}:`, error);
+          }
+        }
+      }
+      setBookingInfo(bookings);
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {
@@ -62,6 +95,10 @@ export default function RentalsPage() {
 
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(item => item.category === selectedCategory);
+    }
+
+    if (selectedStatus !== 'All') {
+      filtered = filtered.filter(item => item.status === selectedStatus.toLowerCase());
     }
 
     if (searchQuery) {
@@ -124,6 +161,20 @@ export default function RentalsPage() {
                 {categories.map(category => (
                   <option key={category} value={category}>{category}</option>
                 ))}
+              </select>
+            </div>
+
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="pl-10 pr-8 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Available">Available</option>
+                <option value="Booked">Booked</option>
+                <option value="Running">Running</option>
               </select>
             </div>
           </div>
@@ -189,10 +240,27 @@ export default function RentalsPage() {
                   </div>
                   {item.status === 'booked' && (
                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800 font-medium flex items-center gap-2">
+                      <p className="text-sm text-yellow-800 font-medium flex items-center gap-2 mb-2">
                         <span className="text-yellow-600">⚠️</span>
-                        This item is currently booked
+                        Currently Booked
                       </p>
+                      {bookingInfo[item._id] && (
+                        <div className="text-xs text-yellow-700 space-y-1">
+                          <p><span className="font-semibold">Booked:</span> {new Date(bookingInfo[item._id].startDate).toLocaleDateString()} to {new Date(bookingInfo[item._id].returnDate).toLocaleDateString()}</p>
+                          {/* <p><span className="font-semibold">Customer:</span> {bookingInfo[item._id].customerName}</p> */}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {item.status === 'running' && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    
+                      {bookingInfo[item._id] && (
+                        <div className="text-xs text-blue-700 space-y-1">
+                          <p><span className="font-semibold">Return By:</span> {new Date(bookingInfo[item._id].returnDate).toLocaleDateString()}</p>
+                          {/* <p><span className="font-semibold">Customer:</span> {bookingInfo[item._id].customerName}</p> */}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

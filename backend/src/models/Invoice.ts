@@ -22,6 +22,7 @@ export interface IInvoice extends Document {
   rentDiscount: number;
   securityDiscount: number;
   advancePayment: number;
+  additionalCharges?: number; // Additional charges for extra days beyond standard period
   totalAmount: number;
   balanceAmount: number;
   shopName: string;
@@ -131,6 +132,11 @@ const InvoiceSchema: Schema = new Schema(
       required: true,
       min: 0,
       default: 0,
+    },
+    additionalCharges: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     totalAmount: {
       type: Number,

@@ -7,42 +7,38 @@ export class InvoiceController {
 
   async generateInvoice(req: Request, res: Response): Promise<void> {
     try {
-      const { bookingId } = req.body;
-      console.log('here on controller', bookingId);
+      const { bookingId, bookingNumber } = req.body;
 
-      if (!bookingId) {
-        res.status(400).json({ error: 'Booking ID is required' });
+      if (!bookingId && !bookingNumber) {
+        res.status(400).json({ error: 'Booking ID or booking number is required' });
         return;
       }
-      console.log('Looking for booking with number:', bookingId);
 
-      // Get booking details to generate invoice
       const Booking = (await import('../models/Booking')).default;
+      let booking: any | null = null;
 
-      // Always search by booking number (not ObjectId)
-      const booking = await Booking.findOne({ bookingNumber: bookingId }).populate('items.itemId');
-
-      console.log('Found booking:', booking);
+      if (bookingId) {
+        booking = await Booking.findById(bookingId).populate('items.itemId');
+      } else if (bookingNumber) {
+        booking = await Booking.findOne({ bookingNumber }).populate('items.itemId');
+      }
 
       if (!booking) {
-        // Debug: Check what bookings exist
-        const allBookings = await Booking.find({});
-        console.log('All bookings in database:', allBookings.map(b => ({ id: b._id, number: b.bookingNumber })));
-
-        res.status(404).json({ error: 'Booking number not found', bookingId, availableBookings: allBookings.map(b => ({ id: b._id, number: b.bookingNumber })) });
+        res.status(404).json({
+          error: bookingId ? 'Booking ID not found' : 'Booking number not found',
+          bookingId,
+          bookingNumber,
+        });
         return;
       }
 
-      // Check if invoice already exists for this booking
       const existingInvoice = await this.invoiceService.getInvoiceByBookingId(booking._id.toString());
-      console.log('existing invoice', existingInvoice);
       if (existingInvoice) {
         res.status(400).json({ error: 'Invoice already exists for this booking', invoice: existingInvoice });
         return;
       }
 
       const invoice = await this.invoiceService.generateInvoice(booking);
-      console.log('invoice', invoice);
       res.status(201).json(invoice);
     } catch (error: any) {
       console.error('Error in generateInvoice:', error);

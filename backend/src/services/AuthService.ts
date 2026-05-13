@@ -8,7 +8,7 @@ export class AuthService {
 
   constructor() {
     this.userRepository = new UserRepository();
-    this.jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
+    this.jwtSecret = process.env.JWT_SECRET || 'belles_avenue_secret_key_2024';
   }
 
   async register(email: string, password: string): Promise<{ token: string; user: any }> {
@@ -20,8 +20,8 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await this.userRepository.create({ email, password: hashedPassword });
 
-    const token = this.generateToken(user._id.toString());
-    return { token, user: { id: user._id, email: user.email } };
+    const token = this.generateToken(user._id.toString(), user.email, user.role || 'admin');
+    return { token, user: { id: user._id, email: user.email, role: user.role } };
   }
 
   async login(email: string, password: string): Promise<{ token: string; user: any }> {
@@ -35,12 +35,12 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    const token = this.generateToken(user._id.toString());
-    return { token, user: { id: user._id, email: user.email } };
+    const token = this.generateToken(user._id.toString(), user.email, user.role || 'admin');
+    return { token, user: { id: user._id, email: user.email, role: user.role } };
   }
 
-  private generateToken(userId: string): string {
-    return jwt.sign({ userId }, this.jwtSecret, { expiresIn: '7d' });
+  private generateToken(userId: string, email: string, role: string): string {
+    return jwt.sign({ userId, email, role }, this.jwtSecret, { expiresIn: '7d' });
   }
 
   verifyToken(token: string): any {

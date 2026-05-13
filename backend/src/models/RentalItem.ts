@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IRentalItem extends Document {
   itemCode: string;
+  barcode: string;
   name: string;
   category: string;
   image: string;
@@ -9,6 +10,7 @@ export interface IRentalItem extends Document {
   halfRentPrice: number;
   securityDeposit: number;
   halfSecurityDeposit: number;
+  purchasePrice: number;
   supportsHalfPricing: boolean;
   status: 'available' | 'booked' | 'running';
   createdAt: Date;
@@ -21,6 +23,12 @@ const RentalItemSchema: Schema = new Schema(
       type: String,
       required: true,
       unique: true,
+      uppercase: true,
+      trim: true,
+    },
+    barcode: {
+      type: String,
+      required: true,
       uppercase: true,
       trim: true,
     },
@@ -62,6 +70,11 @@ const RentalItemSchema: Schema = new Schema(
       type: Boolean,
       required: true,
       default: false,
+    },
+    purchasePrice: {
+      type: Number,
+      required: true,
+      min: 0,
     },
     status: {
       type: String,

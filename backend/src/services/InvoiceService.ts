@@ -27,9 +27,10 @@ export class InvoiceService {
         const rentDiscount = fullBookingData.rentDiscount || 0;
         const securityDiscount = fullBookingData.securityDiscount || 0;
         const advancePayment = fullBookingData.advancePayment || 0;
+        const additionalCharges = fullBookingData.additionalCharges || 0;
         const totalRentAfterDiscount = totalRent - rentDiscount;
         const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
-        const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+        const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount + additionalCharges;
         const balanceAmount = totalAmount - advancePayment;
 
         const invoice = new Invoice({
@@ -54,6 +55,7 @@ export class InvoiceService {
           rentDiscount,
           securityDiscount,
           advancePayment,
+          additionalCharges,
           totalAmount,
           balanceAmount,
           shopName: 'Belles Beauty Hub',
@@ -87,9 +89,10 @@ export class InvoiceService {
       const rentDiscount = bookingData.rentDiscount || 0;
       const securityDiscount = bookingData.securityDiscount || 0;
       const advancePayment = bookingData.advancePayment || 0;
+      const additionalCharges = bookingData.additionalCharges || 0;
       const totalRentAfterDiscount = totalRent - rentDiscount;
       const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
-      const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+      const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount + additionalCharges;
       const balanceAmount = totalAmount - advancePayment;
 
       // Update existing invoice - fetch item details to get names and codes
@@ -116,6 +119,7 @@ export class InvoiceService {
       existingInvoice.rentDiscount = rentDiscount;
       existingInvoice.securityDiscount = securityDiscount;
       existingInvoice.advancePayment = advancePayment;
+      existingInvoice.additionalCharges = additionalCharges;
       existingInvoice.totalAmount = totalAmount;
       existingInvoice.balanceAmount = balanceAmount;
 
@@ -269,6 +273,10 @@ export class InvoiceService {
     }
     if (invoice.advancePayment > 0) {
       doc.text(`Advance Payment: -${this.formatCurrency(invoice.advancePayment)}`, pageWidth - 80, y);
+      y += 6;
+    }
+    if (invoice.additionalCharges && invoice.additionalCharges > 0) {
+      doc.text(`Additional Charges: ${this.formatCurrency(invoice.additionalCharges)}`, pageWidth - 80, y);
       y += 6;
     }
     doc.setFont('helvetica', 'bold');

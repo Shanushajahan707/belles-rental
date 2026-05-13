@@ -19,7 +19,11 @@ export class BookingRepository {
   }
 
   async findByBookingNumber(bookingNumber: string): Promise<IBooking | null> {
-    return Booking.findOne({ bookingNumber }).populate('items.itemId');
+    const booking = await Booking.findOne({ bookingNumber }).populate('items.itemId');
+    if (booking) {
+      console.log(`Retrieved booking ${bookingNumber}:`, JSON.stringify(booking.items, null, 2));
+    }
+    return booking;
   }
 
   async create(bookingData: Partial<IBooking>): Promise<IBooking> {

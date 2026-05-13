@@ -37,6 +37,7 @@ export class BookingService {
     bookingNumber?: string; // Optional - admin can provide manual booking number
     createdBy: string; // Admin user who created the booking
     note?: string; // Admin-only note for additional booking information
+    additionalCharges?: number; // Additional charges for extra days beyond standard period
   }): Promise<IBooking> {
     const bookingItems: IBookingItem[] = [];
     const newStartDate = new Date(bookingData.startDate);
@@ -229,9 +230,10 @@ export class BookingService {
     const rentDiscount = bookingData.rentDiscount || 0;
     const securityDiscount = bookingData.securityDiscount || 0;
     const advancePayment = bookingData.advancePayment || 0;
+    const additionalCharges = bookingData.additionalCharges || 0;
     const totalRentAfterDiscount = totalRent - rentDiscount;
     const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
-    const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+    const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount + additionalCharges;
     const balanceAmount = totalAmount - advancePayment;
 
     const booking = await this.bookingRepository.create({
@@ -245,6 +247,7 @@ export class BookingService {
       rentDiscount,
       securityDiscount,
       advancePayment,
+      additionalCharges,
       totalAmount,
       balanceAmount,
       status: 'booked',
@@ -252,8 +255,17 @@ export class BookingService {
       note: bookingData.note,
     });
 
+    console.log(`Created booking ${bookingNumber} with items:`, JSON.stringify(bookingItems, null, 2));
+    console.log(`Saved booking data:`, JSON.stringify(booking.items, null, 2));
+
     for (const item of bookingItems) {
-      await this.rentalItemRepository.updateStatus(item.itemId.toString(), 'booked');
+      try {
+        await this.rentalItemRepository.updateStatus(item.itemId.toString(), 'booked');
+        console.log(`Set item ${item.itemCode} (ID: ${item.itemId}) status to 'booked' for booking ${bookingNumber}`);
+      } catch (error) {
+        console.error(`Failed to update item ${item.itemCode} status to 'booked':`, error);
+        throw new Error(`Failed to set item ${item.itemCode} to booked status`);
+      }
     }
 
     return booking;
@@ -367,17 +379,25 @@ export class BookingService {
       }
     }
 
-    // Recalculate totals if items are being updated
-    if (bookingData.items) {
-      const totalRent = bookingData.items.reduce((sum, item) => sum + item.rentPrice, 0);
-      const totalSecurity = bookingData.items.reduce((sum, item) => sum + item.security, 0);
-      const rentDiscount = bookingData.rentDiscount || existingBooking.rentDiscount || 0;
-      const securityDiscount = bookingData.securityDiscount || existingBooking.securityDiscount || 0;
-      const advancePayment = bookingData.advancePayment || existingBooking.advancePayment || 0;
+    // Recalculate totals whenever any booking pricing or payment details change
+    if (
+      bookingData.items ||
+      bookingData.rentDiscount !== undefined ||
+      bookingData.securityDiscount !== undefined ||
+      bookingData.advancePayment !== undefined ||
+      bookingData.additionalCharges !== undefined
+    ) {
+      const updatedItems = bookingData.items || existingBooking.items;
+      const totalRent = updatedItems.reduce((sum, item) => sum + (item.rentPrice || 0), 0);
+      const totalSecurity = updatedItems.reduce((sum, item) => sum + (item.security || 0), 0);
+      const rentDiscount = bookingData.rentDiscount !== undefined ? bookingData.rentDiscount : existingBooking.rentDiscount || 0;
+      const securityDiscount = bookingData.securityDiscount !== undefined ? bookingData.securityDiscount : existingBooking.securityDiscount || 0;
+      const advancePayment = bookingData.advancePayment !== undefined ? bookingData.advancePayment : existingBooking.advancePayment || 0;
+      const additionalCharges = bookingData.additionalCharges !== undefined ? bookingData.additionalCharges : existingBooking.additionalCharges || 0;
 
       const totalRentAfterDiscount = totalRent - rentDiscount;
       const totalSecurityAfterDiscount = totalSecurity - securityDiscount;
-      const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount;
+      const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount + additionalCharges;
       const balanceAmount = totalAmount - advancePayment;
 
       bookingData.totalAmount = totalAmount;
@@ -414,6 +434,7 @@ export class BookingService {
         }
 
         await this.rentalItemRepository.updateStatus(itemId, 'available');
+        console.log(`Set item ${item.itemCode} (ID: ${itemId}) status to 'available' - booking ${booking._id} deleted`);
       } catch (error) {
         console.error('Error updating item status:', error);
         throw new Error(`Failed to update item ${item.itemCode} status to available`);
@@ -448,8 +469,9 @@ export class BookingService {
         }
 
         await this.rentalItemRepository.updateStatus(itemId, 'running');
+        console.log(`Set item ${item.itemCode} (ID: ${itemId}) status to 'running' for booking ${booking._id}`);
       } catch (error) {
-        console.error('Error updating item status:', error);
+        console.error(`Error updating item ${item.itemCode} status to running:`, error);
         throw new Error(`Failed to update item ${item.itemCode} status to running`);
       }
     }
@@ -463,7 +485,10 @@ export class BookingService {
     if (!booking) {
       throw new Error('Booking not found');
     }
+    
+    const itemErrors: Error[] = [];
 
+    // Try to update item statuses to available/booked before marking booking complete.
     for (const item of booking.items) {
       try {
         // Extract the itemId properly - handle different possible structures
@@ -475,20 +500,58 @@ export class BookingService {
         } else if (item.itemId && typeof item.itemId.toString === 'function') {
           itemId = item.itemId.toString();
         } else {
-          throw new Error(`Invalid itemId structure for item ${item.itemCode}`);
+          console.error(`Invalid itemId structure for item ${item.itemCode}`);
+          continue; // Skip this item but don't fail the entire operation
+        }
+
+        // Check if item exists and is in 'running' status
+        const rentalItem = await this.rentalItemRepository.findById(itemId);
+        if (!rentalItem) {
+          console.error(`Rental item ${item.itemCode} not found`);
+          continue;
+        }
+
+        if (rentalItem.status !== 'running') {
+          console.log(`Item ${item.itemCode} is not in 'running' status. Current status: ${rentalItem.status}. Skipping status update.`);
+          continue;
+        }
+
+        const activeBookings = await this.bookingRepository.findByItemId(itemId);
+        const otherActiveBookings = activeBookings.filter(b =>
+          b._id.toString() !== booking._id.toString() &&
+          ['booked', 'running'].includes(b.status) &&
+          (b.status === 'running' || (b.status === 'booked' && new Date(b.returnDate) >= new Date()))
+        );
+
+        if (otherActiveBookings.length > 0) {
+          console.log(`Item ${item.itemCode} has ${otherActiveBookings.length} other conflicting active bookings. Cannot set to available:`, otherActiveBookings.map(b => ({
+            id: b._id,
+            status: b.status,
+            returnDate: b.returnDate,
+            startDate: b.startDate
+          })));
+          await this.rentalItemRepository.updateStatus(itemId, 'booked');
+          continue;
         }
 
         await this.rentalItemRepository.updateStatus(itemId, 'available');
-      } catch (error) {
-        console.error('Error updating item status:', error);
-        throw new Error(`Failed to update item ${item.itemCode} status to available`);
+        console.log(`Set item ${item.itemCode} (ID: ${itemId}) status to 'available' - booking ${booking._id} completed. Previous status: ${rentalItem.status}`);
+      } catch (error: any) {
+        itemErrors.push(error);
+        console.error(`Error updating item ${item.itemCode} status:`, error);
       }
     }
 
-    return this.bookingRepository.update(bookingId, {
+    const completedBooking = await this.bookingRepository.update(bookingId, {
       actualReturnDate,
       status: 'completed',
     });
+
+    if (itemErrors.length > 0) {
+      console.error(`Completed booking ${bookingId} with item status update errors:`, itemErrors.map(e => e.message));
+    }
+
+    return completedBooking;
   }
 
   async getDashboardStats(): Promise<{
@@ -530,20 +593,17 @@ export class BookingService {
   }
 
   private async generateBookingNumber(): Promise<string> {
-    // Get current year and month
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
 
-    // Get today's bookings count
-    const todayBookings = await this.bookingRepository.findByDateRange(
-      new Date(year, now.getMonth(), 1),
-      new Date(year, now.getMonth(), 31)
-    );
+    const monthStart = new Date(year, now.getMonth(), 1);
+    const monthEnd = new Date(year, now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Generate sequential number for today
-    const todayCount = todayBookings.length + 1;
-    const bookingNumber = `BK${year}${month}${String(todayCount).padStart(4, '0')}`;
+    const monthBookings = await this.bookingRepository.findByDateRange(monthStart, monthEnd);
+
+    const sequence = monthBookings.length + 1;
+    const bookingNumber = `BK${year}${month}${String(sequence).padStart(4, '0')}`;
 
     return bookingNumber;
   }
@@ -595,7 +655,9 @@ export class BookingService {
         // Calculate proportionate discount for this item
         const bookingTotalWithoutDiscount = booking.totalAmount + booking.rentDiscount + booking.securityDiscount;
         const totalDiscount = booking.rentDiscount + booking.securityDiscount;
-        const discountProportion = (itemTotal / bookingTotalWithoutDiscount) * totalDiscount;
+        const discountProportion = bookingTotalWithoutDiscount > 0
+          ? (itemTotal / bookingTotalWithoutDiscount) * totalDiscount
+          : 0;
 
         // Individual earnings: rent - proportionate discount
         const individualEarnings = itemRent - discountProportion;

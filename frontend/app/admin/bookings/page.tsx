@@ -25,6 +25,7 @@ interface Booking {
   returnDate: string;
   actualReturnDate?: string;
   discount: number;
+  additionalCharges?: number;
   totalAmount: number;
   status: 'booked' | 'running' | 'completed' | 'overdue';
   createdBy: string;
@@ -37,6 +38,8 @@ export default function BookingsManagement() {
   const toast = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'booked' | 'running' | 'completed' | 'overdue'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     checkAuth();
@@ -154,6 +157,19 @@ export default function BookingsManagement() {
     }
   };
 
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
+    const search = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !search ||
+      booking.bookingNumber.toLowerCase().includes(search) ||
+      booking.customerName.toLowerCase().includes(search) ||
+      booking.phone.toLowerCase().includes(search) ||
+      booking.createdBy.toLowerCase().includes(search);
+
+    return matchesStatus && matchesSearch;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -185,9 +201,35 @@ export default function BookingsManagement() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="px-4 py-4 border-b border-gray-200 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <label htmlFor="bookingStatusFilter" className="text-sm font-medium text-gray-700">Status</label>
+              <select
+                id="bookingStatusFilter"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+              >
+                <option value="all">All</option>
+                <option value="booked">Booked</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+                <option value="overdue">Overdue</option>
+              </select>
+            </div>
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by booking #, customer, phone, or created by"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+              />
+            </div>
+          </div>
           {/* Mobile Card View */}
           <div className="md:hidden max-h-96 overflow-y-auto">
-            {bookings.map(booking => (
+            {filteredBookings.map(booking => (
               <div key={booking._id} className="border-b border-gray-200 p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
@@ -231,9 +273,16 @@ export default function BookingsManagement() {
                   <div className="flex justify-between items-center">
                     <p className="font-bold text-gray-900">₹{booking.totalAmount}</p>
                     <div className="text-xs text-gray-500">
-                      <p>Total: Rent + Security - Discounts - Advance</p>
+                      <p>Total: Rent + Security - Discounts - Advance + Addl. Charges</p>
                     </div>
                   </div>
+
+                  {booking.additionalCharges && booking.additionalCharges > 0 && (
+                    <div className="bg-orange-50 p-2 rounded-lg">
+                      <p className="text-xs font-medium text-orange-800 mb-1">Additional Charges:</p>
+                      <p className="text-xs text-orange-700">₹{booking.additionalCharges}</p>
+                    </div>
+                  )}
 
                   {booking.note && (
                     <div className="bg-blue-50 p-2 rounded-lg">
@@ -295,13 +344,14 @@ export default function BookingsManagement() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Addl. Charges</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {bookings.map(booking => (
+                  {filteredBookings.map(booking => (
                     <tr key={booking._id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900">{booking.bookingNumber}</p>
@@ -357,6 +407,17 @@ export default function BookingsManagement() {
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
                         ₹{booking.totalAmount}
+                      </td>
+                      <td className="px-4 py-3">
+                        {booking.additionalCharges && booking.additionalCharges > 0 ? (
+                          <div className="max-w-xs">
+                            <p className="text-xs text-orange-700 truncate" title={`Additional charges: ₹${booking.additionalCharges}`}>
+                              ₹{booking.additionalCharges}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {booking.note ? (

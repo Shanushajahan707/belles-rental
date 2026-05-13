@@ -11,11 +11,13 @@ import { ArrowLeft, Calendar, DollarSign, AlertTriangle, CheckCircle, Clock } fr
 interface RentalItem {
   _id: string;
   itemCode: string;
+  barcode: string;
   name: string;
   category: string;
   image: string;
   rentPrice: number;
   securityDeposit: number;
+  purchasePrice: number;
   status: 'available' | 'booked' | 'running';
 }
 
@@ -50,6 +52,51 @@ export default function ItemDetailPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<ItemStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Calculate item-specific booking stats
+  const calculateBookingStats = () => {
+    let totalBookings = 0;
+    let activeBookings = 0;
+    let completedBookings = 0;
+    let overdueBookings = 0;
+
+    bookings.forEach((booking) => {
+      // Check if this item is in the booking
+      const hasItem = booking.items?.some((bi: any) => bi.itemId === itemId || bi.itemId?._id === itemId);
+      if (hasItem) {
+        totalBookings++;
+        if (booking.status === 'booked' || booking.status === 'running') {
+          activeBookings++;
+        } else if (booking.status === 'completed') {
+          completedBookings++;
+        } else if (booking.status === 'overdue') {
+          overdueBookings++;
+        }
+      }
+    });
+
+    return { totalBookings, activeBookings, completedBookings, overdueBookings };
+  };
+
+  const bookingStats = calculateBookingStats();
+
+  // Calculate earnings specifically for this item only (not entire booking)
+  const calculateItemEarnings = () => {
+    return bookings.reduce((total, booking) => {
+      // Find this specific item in the booking
+      const bookingItem = booking.items?.find((bi: any) => bi.itemId === itemId || bi.itemId?._id === itemId);
+      if (bookingItem && (booking.status === 'completed' || booking.status === 'running' || booking.status === 'overdue')) {
+        // Add only this item's rent price
+        return total + (bookingItem.rentPrice || 0);
+      }
+      return total;
+    }, 0);
+  };
+
+  const itemEarnings = calculateItemEarnings();
+  const profitAmount = item ? itemEarnings - item.purchasePrice : 0;
+  const profitLabel = profitAmount > 0 ? 'Net profit since purchase' : profitAmount < 0 ? 'Net loss since purchase' : 'Break-even since purchase';
+  const profitDisplay = Math.abs(profitAmount).toLocaleString();
 
   useEffect(() => {
     checkAuth();
@@ -143,7 +190,7 @@ export default function ItemDetailPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="bg-white rounded-xl shadow-md overflow-hidden h-fit">
               <div className="h-64 bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
                 {item.image ? (
                   <img
@@ -162,25 +209,33 @@ export default function ItemDetailPage() {
                 )}
               </div>
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">{item.name}</h2>
-                <p className="text-lg text-gray-600 mb-4">{item.category}</p>
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">{item.name}</h2>
+                <p className="text-sm text-gray-500 mb-4">{item.category}</p>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">Item Code</span>
-                    <span className="font-semibold text-gray-800">{item.itemCode}</span>
+                    <span className="text-sm text-gray-600">Item Code</span>
+                    <span className="font-semibold text-gray-800 text-sm">{item.itemCode}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">Rent Price</span>
-                    <span className="font-semibold text-gray-800">₹{item.rentPrice}</span>
+                    <span className="text-sm text-gray-600">Barcode</span>
+                    <span className="font-semibold text-gray-800 text-sm">{item.barcode}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">Security Deposit</span>
-                    <span className="font-semibold text-gray-800">₹{item.securityDeposit}</span>
+                    <span className="text-sm text-gray-600">Purchase Price</span>
+                    <span className="font-semibold text-gray-800 text-sm">₹{item.purchasePrice?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="text-sm text-gray-600">Rent Price</span>
+                    <span className="font-semibold text-gray-800 text-sm">₹{item.rentPrice?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="text-sm text-gray-600">Security</span>
+                    <span className="font-semibold text-gray-800 text-sm">₹{item.securityDeposit?.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-gray-600">Status</span>
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
+                    <span className="text-sm text-gray-600">Status</span>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
                       {item.status}
                     </span>
                   </div>
@@ -190,27 +245,33 @@ export default function ItemDetailPage() {
           </div>
 
           <div className="lg:col-span-2">
-            {stats && (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                <div className="bg-white rounded-xl shadow-md p-4">
-                  <div className="text-3xl font-bold text-gray-800">{stats.totalBookings}</div>
-                  <div className="text-sm text-gray-600">Total Bookings</div>
+            {bookingStats && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
+                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+                  <div className="text-2xl font-bold text-gray-800">{bookingStats.totalBookings}</div>
+                  <div className="text-xs text-gray-600 mt-1">Total Bookings</div>
                 </div>
-                <div className="bg-white rounded-xl shadow-md p-4">
-                  <div className="text-3xl font-bold text-blue-600">{stats.activeBookings}</div>
-                  <div className="text-sm text-gray-600">Active</div>
+                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+                  <div className="text-2xl font-bold text-blue-600">{bookingStats.activeBookings}</div>
+                  <div className="text-xs text-gray-600 mt-1">Active</div>
                 </div>
-                <div className="bg-white rounded-xl shadow-md p-4">
-                  <div className="text-3xl font-bold text-green-600">{stats.completedBookings}</div>
-                  <div className="text-sm text-gray-600">Completed</div>
+                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+                  <div className="text-2xl font-bold text-green-600">{bookingStats.completedBookings}</div>
+                  <div className="text-xs text-gray-600 mt-1">Completed</div>
                 </div>
-                <div className="bg-white rounded-xl shadow-md p-4">
-                  <div className="text-3xl font-bold text-red-600">{stats.overdueBookings}</div>
-                  <div className="text-sm text-gray-600">Overdue</div>
+                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+                  <div className="text-2xl font-bold text-red-600">{bookingStats.overdueBookings}</div>
+                  <div className="text-xs text-gray-600 mt-1">Overdue</div>
                 </div>
-                <div className="bg-white rounded-xl shadow-md p-4">
-                  <div className="text-3xl font-bold text-purple-600">₹{stats.totalEarnings.toLocaleString()}</div>
-                  <div className="text-sm text-gray-600">Total Earnings</div>
+                <div className="bg-white rounded-lg shadow-sm p-3 border border-purple-100">
+                  <div className="text-2xl font-bold text-purple-600">₹{itemEarnings?.toLocaleString() || 0}</div>
+                  <div className="text-xs text-gray-600 mt-1">Item Earnings</div>
+                </div>
+                <div className={`bg-white rounded-lg shadow-sm p-3 border-2 ${profitAmount >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+                  <div className={`text-2xl font-bold ${profitAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ₹{profitDisplay}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">{profitLabel}</div>
                 </div>
               </div>
             )}
@@ -228,17 +289,21 @@ export default function ItemDetailPage() {
                     <p className="text-gray-500">This item hasn't been rented yet</p>
                   </div>
                 ) : (
-                  bookings.map((booking) => (
-                    <div key={booking._id} className="p-6 hover:bg-gray-50">
+                  bookings.map((booking) => {
+                    // Find this specific item in the booking
+                    const bookingItem = booking.items?.find((bi: any) => bi.itemId === itemId || bi.itemId?._id === itemId);
+                    
+                    return (
+                    <div key={booking._id} className="p-6 hover:bg-gray-50 border-b last:border-b-0">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
                           {getStatusIcon(booking.status)}
                           <div>
                             <h4 className="font-semibold text-gray-800">{booking.customerName}</h4>
                             <p className="text-sm text-gray-600">{booking.phone}</p>
-                            {booking.items && booking.items.length > 1 && (
+                            {bookingItem && (
                               <p className="text-xs text-blue-600 mt-1">
-                                Items: {booking.items.map(item => `${item.itemCode} (${item.itemName})`).join(', ')}
+                                {bookingItem.itemCode || 'Item Code'} - {bookingItem.itemName || 'Item'} ({bookingItem.priceType === 'half' ? 'Half' : 'Full'} Price)
                               </p>
                             )}
                           </div>
@@ -248,52 +313,62 @@ export default function ItemDetailPage() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                         <div>
-                          <span className="text-gray-500">Start Date:</span>
-                          <p className="font-medium text-gray-800">
+                          <span className="text-xs text-gray-500 block">Start Date</span>
+                          <p className="font-medium text-gray-800 text-sm">
                             {new Date(booking.startDate).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <span className="text-gray-500">Return Date:</span>
-                          <p className="font-medium text-gray-800">
+                          <span className="text-xs text-gray-500 block">Return Date</span>
+                          <p className="font-medium text-gray-800 text-sm">
                             {new Date(booking.returnDate).toLocaleDateString()}
                           </p>
                         </div>
                         {booking.actualReturnDate && (
                           <div>
-                            <span className="text-gray-500">Actual Return:</span>
-                            <p className="font-medium text-gray-800">
+                            <span className="text-xs text-gray-500 block">Actual Return</span>
+                            <p className="font-medium text-gray-800 text-sm">
                               {new Date(booking.actualReturnDate).toLocaleDateString()}
                             </p>
                           </div>
                         )}
                         <div>
-                          <span className="text-gray-500">Total Amount:</span>
-                          <p className="font-medium text-gray-800">₹{booking.totalAmount}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Discount:</span>
-                          <p className="font-medium text-gray-800">₹{booking.discount}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Booked On:</span>
-                          <p className="font-medium text-gray-800">
+                          <span className="text-xs text-gray-500 block">Booking Date</span>
+                          <p className="font-medium text-gray-800 text-sm">
                             {new Date(booking.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
 
+                      {bookingItem && (
+                        <div className="grid grid-cols-3 gap-3 text-sm mb-3 p-3 bg-blue-50 rounded-lg">
+                          <div>
+                            <span className="text-xs text-gray-600 block">Rent Charged</span>
+                            <p className="font-semibold text-gray-800">₹{bookingItem.rentPrice?.toLocaleString() || 0}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-600 block">Security</span>
+                            <p className="font-semibold text-gray-800">₹{bookingItem.security?.toLocaleString() || 0}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-600 block">Price Type</span>
+                            <p className="font-semibold text-gray-800">{bookingItem.priceType === 'half' ? 'Half' : 'Full'}</p>
+                          </div>
+                        </div>
+                      )}
+
                       {booking.status === 'overdue' && (
-                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-sm text-red-700 font-medium">
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-xs text-red-700 font-medium">
                             ⚠️ This rental is overdue!
                           </p>
                         </div>
                       )}
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

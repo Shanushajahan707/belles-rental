@@ -22,6 +22,7 @@ interface Booking {
   rentDiscount: number;
   securityDiscount: number;
   advancePayment: number;
+  additionalCharges?: number;
   totalAmount: number;
   balanceAmount: number;
   status: 'booked' | 'running' | 'completed' | 'overdue';
@@ -44,6 +45,7 @@ interface Invoice {
   rentDiscount: number;
   securityDiscount: number;
   advancePayment: number;
+  additionalCharges?: number;
   totalAmount: number;
   balanceAmount: number;
   shopName: string;
@@ -277,6 +279,12 @@ function BookingConfirmationContent() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Advance Payment:</span>
                     <span className="font-medium text-green-600">-₹{booking.advancePayment}</span>
+                  </div>
+                )}
+                {booking.additionalCharges && booking.additionalCharges > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-orange-600">Additional Charges:</span>
+                    <span className="font-medium text-orange-600">₹{booking.additionalCharges}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold border-t pt-2">

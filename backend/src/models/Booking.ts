@@ -21,6 +21,7 @@ export interface IBooking extends Document {
   rentDiscount: number;
   securityDiscount: number;
   advancePayment: number;
+  additionalCharges?: number; // Additional charges for extra days beyond standard period
   totalAmount: number;
   balanceAmount: number;
   status: 'booked' | 'running' | 'completed' | 'overdue';
@@ -139,6 +140,11 @@ const BookingSchema: Schema = new Schema(
     note: {
       type: String,
       trim: true,
+    },
+    additionalCharges: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {
