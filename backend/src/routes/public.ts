@@ -1,16 +1,15 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
-import { BookingController } from '../controllers/BookingController';
+import { Request, Response } from 'express';
 
 const router = Router();
-const bookingController = new BookingController();
 
 // Public endpoints (no authentication required)
-router.get('/test', (req, res) => {
+router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'Test endpoint working', timestamp: new Date() });
 });
 
-router.get('/health', (req, res) => {
+router.get('/health', (req: Request, res: Response) => {
   const stateMap: Record<number, string> = {
     0: 'disconnected',
     1: 'connected',
