@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { jsPDF } from 'jspdf';
 import Invoice, { IInvoice } from '../models/Invoice';
 import RentalItem from '../models/RentalItem';
+import Booking from '../models/Booking';
 
 export class InvoiceService {
   async generateInvoice(bookingData: any): Promise<IInvoice> {
@@ -10,7 +11,6 @@ export class InvoiceService {
       let fullBookingData = bookingData;
       if (typeof bookingData === 'string' || bookingData.bookingId) {
         const bookingId = typeof bookingData === 'string' ? bookingData : bookingData.bookingId;
-        const Booking = (await import('../models/Booking')).default;
         fullBookingData = await Booking.findById(bookingId).populate('items.itemId');
 
         if (!fullBookingData) {

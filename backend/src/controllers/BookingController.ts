@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { BookingService } from '../services/BookingService';
 import { IRentalItem } from '../models/RentalItem';
+import { InvoiceService } from '../services/InvoiceService';
 
 export class BookingController {
   private bookingService: BookingService;
@@ -61,7 +62,6 @@ export class BookingController {
 
       // Automatically generate invoice for the new booking
       try {
-        const { InvoiceService } = await import('../services/InvoiceService');
         const invoiceService = new InvoiceService();
         await invoiceService.generateInvoice(booking);
       } catch (invoiceError) {
@@ -88,7 +88,6 @@ export class BookingController {
 
       // Automatically regenerate invoice for the updated booking
       try {
-        const { InvoiceService } = await import('../services/InvoiceService');
         const invoiceService = new InvoiceService();
         await invoiceService.updateInvoice(booking);
       } catch (invoiceError) {

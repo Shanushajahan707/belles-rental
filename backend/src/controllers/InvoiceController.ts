@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { IInvoice } from '../models/Invoice';
 import { InvoiceService } from '../services/InvoiceService';
+import Booking from '../models/Booking';
 
 export class InvoiceController {
   constructor(private invoiceService: InvoiceService) { }
@@ -14,7 +14,6 @@ export class InvoiceController {
         return;
       }
 
-      const Booking = (await import('../models/Booking')).default;
       let booking: any | null = null;
 
       if (bookingId) {
