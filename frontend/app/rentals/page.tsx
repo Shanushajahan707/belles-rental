@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import { API_URL } from '@/config';
 import { Search, Filter } from 'lucide-react';
 
 interface RentalItem {
@@ -47,6 +47,7 @@ export default function RentalsPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchItems();
@@ -58,17 +59,32 @@ export default function RentalsPage() {
 
   const fetchItems = async () => {
     try {
-      const response = await api.get('/items');
-      setItems(response.data);
+      const response = await fetch(`${API_URL}/items`);
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('Unable to load rentals right now. Please refresh or contact support.');
+          return;
+        }
+        throw new Error(`Failed to load items: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setItems(data);
 
       // Fetch booking info for booked/running items
       const bookings: { [itemId: string]: BookingInfo } = {};
-      for (const item of response.data) {
+      for (const item of data) {
         if (item.status === 'booked' || item.status === 'running') {
           try {
-            const bookingRes = await api.get(`/bookings/item/${item._id}`);
-            if (bookingRes.data && bookingRes.data.length > 0) {
-              const activeBooking = bookingRes.data[0]; // Get first booking
+            const bookingRes = await fetch(`${API_URL}/bookings/public/item/${item._id}`);
+            if (!bookingRes.ok) {
+              console.error(`Booking fetch failed for item ${item._id}:`, bookingRes.status);
+              continue;
+            }
+            const bookingData = await bookingRes.json();
+            const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
+            if (bookingArray.length > 0) {
+              const activeBooking = bookingArray[0]; // Get first booking
               bookings[item._id] = {
                 bookingNumber: activeBooking.bookingNumber,
                 customerName: activeBooking.customerName,
@@ -77,14 +93,16 @@ export default function RentalsPage() {
                 status: activeBooking.status,
               };
             }
-          } catch (error) {
-            console.error(`Error fetching booking for item ${item._id}:`, error);
+            // console.log(`Fetched booking for item ${item._id}:`, bookings[item._id],bookingData);
+          } catch (bookingError) {
+            console.error(`Error fetching booking for item ${item._id}:`, bookingError);
           }
         }
       }
       setBookingInfo(bookings);
-    } catch (error) {
-      console.error('Error fetching items:', error);
+    } catch (fetchError: any) {
+      console.error('Error fetching items:', fetchError);
+      setError('Unable to load rentals right now. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -125,10 +143,38 @@ export default function RentalsPage() {
     }
   };
 
+  const formatBookingDate = (dateString?: string) => {
+    if (!dateString) return 'Date unavailable';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Invalid date';
+    return date.toLocaleDateString();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-xl w-full bg-white rounded-xl shadow-md p-8 text-center">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Unable to load rentals</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              setError('');
+              fetchItems();
+            }}
+            className="inline-flex items-center justify-center rounded-lg bg-pink-500 px-6 py-3 text-white font-semibold hover:bg-pink-600"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
@@ -246,7 +292,7 @@ export default function RentalsPage() {
                       </p>
                       {bookingInfo[item._id] && (
                         <div className="text-xs text-yellow-700 space-y-1">
-                          <p><span className="font-semibold">Booked:</span> {new Date(bookingInfo[item._id].startDate).toLocaleDateString()} to {new Date(bookingInfo[item._id].returnDate).toLocaleDateString()}</p>
+                          <p><span className="font-semibold">Booked:</span> {formatBookingDate(bookingInfo[item._id]?.startDate)} to {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
                           {/* <p><span className="font-semibold">Customer:</span> {bookingInfo[item._id].customerName}</p> */}
                         </div>
                       )}
@@ -257,7 +303,7 @@ export default function RentalsPage() {
                     
                       {bookingInfo[item._id] && (
                         <div className="text-xs text-blue-700 space-y-1">
-                          <p><span className="font-semibold">Return By:</span> {new Date(bookingInfo[item._id].returnDate).toLocaleDateString()}</p>
+                          <p><span className="font-semibold">Return By:</span> {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
                           {/* <p><span className="font-semibold">Customer:</span> {bookingInfo[item._id].customerName}</p> */}
                         </div>
                       )}

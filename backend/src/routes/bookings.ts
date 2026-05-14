@@ -5,10 +5,11 @@ import { authenticate } from '../middleware/auth';
 const router = Router();
 const bookingController = new BookingController();
 
-router.get('/', authenticate, (req, res) => bookingController.getAllBookings(req, res));
+router.get('/', (req, res) => bookingController.getAllBookings(req, res));
 router.get('/dashboard/stats', authenticate, (req, res) => bookingController.getDashboardStats(req, res));
 router.get('/fetchItems', authenticate, (req, res) => bookingController.getItems(req, res));
 router.get('/item/:itemId', authenticate, (req, res) => bookingController.getBookingHistoryByItemId(req, res));
+router.get('/public/item/:itemId', (req, res) => bookingController.getBookingHistoryByItemId(req, res));
 router.get('/item/:itemId/stats', authenticate, (req, res) => bookingController.getItemStats(req, res));
 router.get('/item/:itemId/earnings', authenticate, (req, res) => bookingController.getItemEarnings(req, res));
 router.get('/items', authenticate, (req, res) => bookingController.getItems(req, res));

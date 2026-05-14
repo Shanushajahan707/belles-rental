@@ -1,9 +1,49 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import api from '@/lib/api';
 
 export default function Home() {
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+
+  useEffect(() => {
+    const checkBackendHealth = async () => {
+      try {
+        const response = await api.get('/public/health');
+        if (response.data?.status === 'ok') {
+          setBackendStatus('connected');
+        } else {
+          setBackendStatus('disconnected');
+        }
+      } catch (error) {
+        console.error('Backend health check failed:', error);
+        setBackendStatus('disconnected');
+      }
+    };
+
+    checkBackendHealth();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full text-center">
+        <div className="mb-6">
+          {backendStatus === 'checking' ? (
+            <div className="inline-flex items-center justify-center rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm">
+              Checking backend connection...
+            </div>
+          ) : backendStatus === 'connected' ? (
+            <div className="inline-flex items-center justify-center rounded-full bg-green-50 px-4 py-2 text-sm font-medium text-green-700 border border-green-200 shadow-sm">
+              Backend is connected and responding.
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center rounded-full bg-red-50 px-4 py-2 text-sm font-medium text-red-700 border border-red-200 shadow-sm">
+              Backend is not reachable right now. Please refresh or try again later after 60s.
+            </div>
+          )}
+        </div>
+
         <div className="mb-12">
           <h1 className="text-6xl font-bold text-gray-800 mb-4">
             Belles Avenue
