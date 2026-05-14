@@ -24,15 +24,27 @@ interface RentalItem {
 }
 
 const categories = [
-  'Antique Necklace (Choker)',
-  'Antique Necklace (Layered)',
-  'Antique Earrings (Jhumka)',
-  'Bangles (Antique)',
-  'Bangles (Normal)',
-  'Earchain',
-  'Chutty',
+  'Antique Choker',
+  'Antique Second Necklace',
+  'Antique Necklace Set (Choker + Second Necklace)',
+
+  'AD Choker',
+  'AD Second Necklace',
+  'AD Necklace Set (Choker + Second Necklace)',
+
+  'Chutty (Antique)',
+  'Chutty (AD)',
+
   'Hip Chain',
-  'AD Necklace',
+
+  'Hair Accessories',
+
+  'Bangles (Antique)',
+  'Bangles (AD)',
+
+  'Earrings (Antique)',
+
+  'Earchain (Antique)'
 ];
 
 export default function ItemsManagement() {
