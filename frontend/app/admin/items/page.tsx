@@ -128,9 +128,9 @@ export default function ItemsManagement() {
       const payload = {
         ...formData,
         rentPrice: parseFloat(formData.rentPrice),
-        halfRentPrice: parseFloat(formData.halfRentPrice),
+        halfRentPrice: formData.supportsHalfPricing ? parseFloat(formData.halfRentPrice) : 0,
         securityDeposit: parseFloat(formData.securityDeposit),
-        halfSecurityDeposit: parseFloat(formData.halfSecurityDeposit),
+        halfSecurityDeposit: formData.supportsHalfPricing ? parseFloat(formData.halfSecurityDeposit) : 0,
         purchasePrice: parseFloat(formData.purchasePrice),
         supportsHalfPricing: formData.supportsHalfPricing,
       };
@@ -482,10 +482,15 @@ export default function ItemsManagement() {
                     type="number"
                     value={formData.halfRentPrice}
                     onChange={(e) => setFormData({ ...formData, halfRentPrice: e.target.value })}
-                    required
+                    required={formData.supportsHalfPricing}
+                    disabled={!formData.supportsHalfPricing}
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                      formData.supportsHalfPricing
+                        ? 'border-gray-300'
+                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                    }`}
                     placeholder="250"
                   />
                 </div>
@@ -510,10 +515,15 @@ export default function ItemsManagement() {
                     type="number"
                     value={formData.halfSecurityDeposit}
                     onChange={(e) => setFormData({ ...formData, halfSecurityDeposit: e.target.value })}
-                    required
+                    required={formData.supportsHalfPricing}
+                    disabled={!formData.supportsHalfPricing}
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                      formData.supportsHalfPricing
+                        ? 'border-gray-300'
+                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                    }`}
                     placeholder="1000"
                   />
                 </div>
