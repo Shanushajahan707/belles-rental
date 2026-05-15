@@ -13,6 +13,7 @@ interface RentalItem {
   itemCode: string;
   barcode: string;
   name: string;
+  oldEarnings: number;
   category: string;
   image: string;
   rentPrice: number;
@@ -264,7 +265,7 @@ export default function ItemDetailPage() {
                   <div className="text-xs text-gray-600 mt-1">Overdue</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-3 border border-purple-100">
-                  <div className="text-2xl font-bold text-purple-600">₹{itemEarnings?.toLocaleString() || 0}</div>
+                  <div className="text-2xl font-bold text-purple-600">₹{itemEarnings || 0 + (item?.oldEarnings || 0)}</div>
                   <div className="text-xs text-gray-600 mt-1">Item Earnings</div>
                 </div>
                 <div className={`bg-white rounded-lg shadow-sm p-3 border-2 ${profitAmount >= 0 ? 'border-green-200' : 'border-red-200'}`}>

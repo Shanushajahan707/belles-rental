@@ -11,7 +11,7 @@ export const connectDatabase = async (): Promise<void> => {
       : process.env.MONGODB_DEV_URI || '';
 
     console.log(`Connecting to MongoDB (${nodeEnv} mode)...`);
-    // console.log(`Database URI: ${mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')}`); // Hide credentials in logs
+    console.log(`Database URI: ${mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')}`); // Hide credentials in logs
 
     await mongoose.connect(mongoUri);
     console.log('MongoDB connected successfully');
