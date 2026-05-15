@@ -6,9 +6,7 @@ export const connectDatabase = async (): Promise<void> => {
     const nodeEnv = isProd ? 'production' : 'development';
 
     // Select MongoDB URI based on PROD flag
-    const mongoUri = isProd
-      ? process.env.MONGODB_PROD_URI || ''
-      : process.env.MONGODB_DEV_URI || '';
+    const mongoUri = process.env.MONGODB_PROD_URI || '';
 
     console.log(`Connecting to MongoDB (${nodeEnv} mode)...`);
     console.log(`Database URI: ${mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')}`); // Hide credentials in logs

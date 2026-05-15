@@ -27,27 +27,19 @@ const categories = [
   'Antique Choker',
   'Antique Second Necklace',
   'Antique Necklace Set (Choker + Second Necklace)',
-
   'Normal Choker',
   'Normal Second Necklace',
   'Normal Necklace Set (Choker + Second Necklace)',
-
   'AD Choker',
   'AD Second Necklace',
   'AD Necklace Set (Choker + Second Necklace)',
-
   'Chutty (Antique)',
   'Chutty (AD)',
-
   'Hip Chain',
-
   'Hair Accessories',
-
   'Bangles (Antique)',
   'Bangles (AD)',
-
   'Earrings (Antique)',
-
   'Earchain (Antique)'
 ];
 

@@ -28,15 +28,23 @@ interface BookingInfo {
 
 const categories = [
   'All',
-  'Antique Necklace (Choker)',
-  'Antique Necklace (Layered)',
-  'Antique Earrings (Jhumka)',
-  'Bangles (Antique)',
-  'Bangles (Normal)',
-  'Earchain',
-  'Chutty',
+  'Antique Choker',
+  'Antique Second Necklace',
+  'Antique Necklace Set (Choker + Second Necklace)',
+  'Normal Choker',
+  'Normal Second Necklace',
+  'Normal Necklace Set (Choker + Second Necklace)',
+  'AD Choker',
+  'AD Second Necklace',
+  'AD Necklace Set (Choker + Second Necklace)',
+  'Chutty (Antique)',
+  'Chutty (AD)',
   'Hip Chain',
-  'AD Necklace',
+  'Hair Accessories',
+  'Bangles (Antique)',
+  'Bangles (AD)',
+  'Earrings (Antique)',
+  'Earchain (Antique)'
 ];
 
 export default function RentalsPage() {
@@ -48,6 +56,7 @@ export default function RentalsPage() {
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchItems();
@@ -106,6 +115,17 @@ export default function RentalsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getImageUrl = (img: string) => {
+    if (!img) return '';
+
+    if (img.includes('drive.google.com')) {
+      const id = img.split('/file/d/')[1]?.split('/')[0];
+      return `https://drive.google.com/uc?export=view&id=${id}`;
+    }
+
+    return img;
   };
 
   const filterItems = () => {
@@ -239,6 +259,7 @@ export default function RentalsPage() {
                       : item.image
                     }
                     alt={item.name}
+                    onClick={() => setSelectedImage(item.image)}
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       e.currentTarget.src = 'https://via.placeholder.com/400x300.png?text=Image+Not+Available';
@@ -248,6 +269,28 @@ export default function RentalsPage() {
                   <div className="text-6xl">💎</div>
                 )}
               </div>
+
+              {selectedImage && (
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  {/* STOP closing when clicking image */}
+                  <div
+                    className="bg-white p-2 rounded-xl shadow-xl max-w-lg w-[90%]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <img
+                      src={selectedImage.includes('drive.google.com')
+                        ? `https://drive.google.com/thumbnail?id=${selectedImage.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
+                        : selectedImage
+                      }
+                      alt="Full View"
+                      className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
@@ -283,6 +326,7 @@ export default function RentalsPage() {
                         </div>
                       </div>
                     )}
+
                   </div>
                   {item.status === 'booked' && (
                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -300,7 +344,7 @@ export default function RentalsPage() {
                   )}
                   {item.status === 'running' && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    
+
                       {bookingInfo[item._id] && (
                         <div className="text-xs text-blue-700 space-y-1">
                           <p><span className="font-semibold">Return By:</span> {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
@@ -312,6 +356,8 @@ export default function RentalsPage() {
                 </div>
               </div>
             </div>
+
+
           ))}
         </div>
 

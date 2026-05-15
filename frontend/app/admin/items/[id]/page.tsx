@@ -95,8 +95,21 @@ export default function ItemDetailPage() {
   };
 
   const itemEarnings = calculateItemEarnings();
-  const profitAmount = item ? itemEarnings - item.purchasePrice : 0;
-  const profitLabel = profitAmount > 0 ? 'Net profit since purchase' : profitAmount < 0 ? 'Net loss since purchase' : 'Break-even since purchase';
+  const totalEarnings = item
+    ? (item.oldEarnings || 0) + itemEarnings
+    : 0;
+
+  const profitAmount = item
+    ? totalEarnings - item.purchasePrice
+    : 0;
+
+  const profitLabel =
+    profitAmount > 0
+      ? 'Net profit since purchase'
+      : profitAmount < 0
+        ? 'Net loss since purchase'
+        : 'Break-even since purchase';
+
   const profitDisplay = Math.abs(profitAmount).toLocaleString();
 
   useEffect(() => {
@@ -293,81 +306,81 @@ export default function ItemDetailPage() {
                   bookings.map((booking) => {
                     // Find this specific item in the booking
                     const bookingItem = booking.items?.find((bi: any) => bi.itemId === itemId || bi.itemId?._id === itemId);
-                    
+
                     return (
-                    <div key={booking._id} className="p-6 hover:bg-gray-50 border-b last:border-b-0">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(booking.status)}
+                      <div key={booking._id} className="p-6 hover:bg-gray-50 border-b last:border-b-0">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            {getStatusIcon(booking.status)}
+                            <div>
+                              <h4 className="font-semibold text-gray-800">{booking.customerName}</h4>
+                              <p className="text-sm text-gray-600">{booking.phone}</p>
+                              {bookingItem && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  {bookingItem.itemCode || 'Item Code'} - {bookingItem.itemName || 'Item'} ({bookingItem.priceType === 'half' ? 'Half' : 'Full'} Price)
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
+                            {booking.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                           <div>
-                            <h4 className="font-semibold text-gray-800">{booking.customerName}</h4>
-                            <p className="text-sm text-gray-600">{booking.phone}</p>
-                            {bookingItem && (
-                              <p className="text-xs text-blue-600 mt-1">
-                                {bookingItem.itemCode || 'Item Code'} - {bookingItem.itemName || 'Item'} ({bookingItem.priceType === 'half' ? 'Half' : 'Full'} Price)
+                            <span className="text-xs text-gray-500 block">Start Date</span>
+                            <p className="font-medium text-gray-800 text-sm">
+                              {new Date(booking.startDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-500 block">Return Date</span>
+                            <p className="font-medium text-gray-800 text-sm">
+                              {new Date(booking.returnDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {booking.actualReturnDate && (
+                            <div>
+                              <span className="text-xs text-gray-500 block">Actual Return</span>
+                              <p className="font-medium text-gray-800 text-sm">
+                                {new Date(booking.actualReturnDate).toLocaleDateString()}
                               </p>
-                            )}
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-xs text-gray-500 block">Booking Date</span>
+                            <p className="font-medium text-gray-800 text-sm">
+                              {new Date(booking.createdAt).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
-                          {booking.status}
-                        </span>
-                      </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
-                        <div>
-                          <span className="text-xs text-gray-500 block">Start Date</span>
-                          <p className="font-medium text-gray-800 text-sm">
-                            {new Date(booking.startDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-500 block">Return Date</span>
-                          <p className="font-medium text-gray-800 text-sm">
-                            {new Date(booking.returnDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        {booking.actualReturnDate && (
-                          <div>
-                            <span className="text-xs text-gray-500 block">Actual Return</span>
-                            <p className="font-medium text-gray-800 text-sm">
-                              {new Date(booking.actualReturnDate).toLocaleDateString()}
+                        {bookingItem && (
+                          <div className="grid grid-cols-3 gap-3 text-sm mb-3 p-3 bg-blue-50 rounded-lg">
+                            <div>
+                              <span className="text-xs text-gray-600 block">Rent Charged</span>
+                              <p className="font-semibold text-gray-800">₹{bookingItem.rentPrice?.toLocaleString() || 0}</p>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-600 block">Security</span>
+                              <p className="font-semibold text-gray-800">₹{bookingItem.security?.toLocaleString() || 0}</p>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-600 block">Price Type</span>
+                              <p className="font-semibold text-gray-800">{bookingItem.priceType === 'half' ? 'Half' : 'Full'}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {booking.status === 'overdue' && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-xs text-red-700 font-medium">
+                              ⚠️ This rental is overdue!
                             </p>
                           </div>
                         )}
-                        <div>
-                          <span className="text-xs text-gray-500 block">Booking Date</span>
-                          <p className="font-medium text-gray-800 text-sm">
-                            {new Date(booking.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
                       </div>
-
-                      {bookingItem && (
-                        <div className="grid grid-cols-3 gap-3 text-sm mb-3 p-3 bg-blue-50 rounded-lg">
-                          <div>
-                            <span className="text-xs text-gray-600 block">Rent Charged</span>
-                            <p className="font-semibold text-gray-800">₹{bookingItem.rentPrice?.toLocaleString() || 0}</p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-600 block">Security</span>
-                            <p className="font-semibold text-gray-800">₹{bookingItem.security?.toLocaleString() || 0}</p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-600 block">Price Type</span>
-                            <p className="font-semibold text-gray-800">{bookingItem.priceType === 'half' ? 'Half' : 'Full'}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {booking.status === 'overdue' && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-xs text-red-700 font-medium">
-                            ⚠️ This rental is overdue!
-                          </p>
-                        </div>
-                      )}
-                    </div>
                     );
                   })
                 )}
