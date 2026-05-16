@@ -200,13 +200,13 @@ export default function RentalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-6">Our Rentals</h1>
 
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 overflow-hidden">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
@@ -217,12 +217,12 @@ export default function RentalsPage() {
               />
             </div>
 
-            <div className="relative">
+            <div className="relative min-w-0">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="pl-10 pr-8 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white"
+                className="pl-10 text-sm pr-8 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white w-full max-w-full truncate"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>{category}</option>
@@ -230,12 +230,12 @@ export default function RentalsPage() {
               </select>
             </div>
 
-            <div className="relative">
+            <div className="relative min-w-0">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="pl-10 pr-8 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white"
+                className="pl-10 text-sm pr-8 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white w-full max-w-full"
               >
                 <option value="All">All Statuses</option>
                 <option value="Available">Available</option>
@@ -260,7 +260,7 @@ export default function RentalsPage() {
                     }
                     alt={item.name}
                     onClick={() => setSelectedImage(item.image)}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover cursor-pointer"
                     onError={(e) => {
                       e.currentTarget.src = 'https://via.placeholder.com/400x300.png?text=Image+Not+Available';
                     }}
@@ -270,85 +270,59 @@ export default function RentalsPage() {
                 )}
               </div>
 
-              {selectedImage && (
-                <div
-                  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-                  onClick={() => setSelectedImage(null)}
-                >
-                  {/* STOP closing when clicking image */}
-                  <div
-                    className="bg-white p-2 rounded-xl shadow-xl max-w-lg w-[90%]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <img
-                      src={selectedImage.includes('drive.google.com')
-                        ? `https://drive.google.com/thumbnail?id=${selectedImage.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
-                        : selectedImage
-                      }
-                      alt="Full View"
-                      className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg text-gray-800">{item.name}</h3>
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">{item.name}</h3>
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)} w-fit`}>
                     {item.status}
                   </span>
-
                 </div>
 
-                <p className="text-sm text-gray-600 mb-1">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">
                   <span className="font-medium">Code:</span> {item.itemCode}
                 </p>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-xs sm:text-sm text-gray-600 mb-3">
                   <span className="font-medium">Category:</span> {item.category}
                 </p>
 
                 <div className="border-t pt-3 mt-3">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">Full Price:</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">Full Price:</span>
                       <div className="text-right">
-                        <p className="text-sm text-gray-600">Rent: ₹{item.rentPrice}</p>
-                        <p className="text-sm text-gray-600">Security: ₹{item.securityDeposit}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">Rent: ₹{item.rentPrice}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">Security: ₹{item.securityDeposit}</p>
                       </div>
                     </div>
                     {item.supportsHalfPricing && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-green-700">Half Price:</span>
+                        <span className="text-xs sm:text-sm font-medium text-green-700">Half Price:</span>
                         <div className="text-right">
-                          <p className="text-sm text-green-600">Rent: ₹{item.halfRentPrice}</p>
-                          <p className="text-sm text-green-600">Security: ₹{item.halfSecurityDeposit}</p>
+                          <p className="text-xs sm:text-sm text-green-600">Rent: ₹{item.halfRentPrice}</p>
+                          <p className="text-xs sm:text-sm text-green-600">Security: ₹{item.halfSecurityDeposit}</p>
                         </div>
                       </div>
                     )}
 
                   </div>
                   {item.status === 'booked' && (
-                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800 font-medium flex items-center gap-2 mb-2">
+                    <div className="mt-3 p-2 sm:p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-xs sm:text-sm text-yellow-800 font-medium flex items-center gap-2 mb-2">
                         <span className="text-yellow-600">⚠️</span>
                         Currently Booked
                       </p>
                       {bookingInfo[item._id] && (
                         <div className="text-xs text-yellow-700 space-y-1">
                           <p><span className="font-semibold">Booked:</span> {formatBookingDate(bookingInfo[item._id]?.startDate)} to {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
-                          {/* <p><span className="font-semibold">Customer:</span> {bookingInfo[item._id].customerName}</p> */}
                         </div>
                       )}
                     </div>
                   )}
                   {item.status === 'running' && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-
+                    <div className="mt-3 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       {bookingInfo[item._id] && (
                         <div className="text-xs text-blue-700 space-y-1">
                           <p><span className="font-semibold">Return By:</span> {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
-                          {/* <p><span className="font-semibold">Customer:</span> {bookingInfo[item._id].customerName}</p> */}
                         </div>
                       )}
                     </div>
@@ -362,13 +336,54 @@ export default function RentalsPage() {
         </div>
 
         {filteredItems.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No items found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+          <div className="text-center py-12 px-4">
+            <div className="text-4xl sm:text-6xl mb-4">🔍</div>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No items found</h3>
+            <p className="text-sm sm:text-base text-gray-500">Try adjusting your search or filter criteria</p>
           </div>
         )}
       </div>
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-2 right-2 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-700"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <img
+              src={selectedImage.includes('drive.google.com')
+                ? `https://drive.google.com/thumbnail?id=${selectedImage.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
+                : selectedImage
+              }
+              alt="Full View"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
