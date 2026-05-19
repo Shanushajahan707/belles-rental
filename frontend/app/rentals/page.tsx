@@ -42,6 +42,7 @@ const categories = [
   'Hip Chain',
   'Kerala Choker',
   'Kerala Second Necklace',
+  'Kerala Necklace Set (Choker + Second Necklace)',
   'Hair Accessories',
   'Bangles (Antique)',
   'Bangles (AD)',

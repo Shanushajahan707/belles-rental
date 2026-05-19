@@ -33,6 +33,7 @@ const categories = [
   'AD Choker',
   'Kerala Choker',
   'Kerala Second Necklace',
+  'Kerala Necklace Set (Choker + Second Necklace)',
   'AD Second Necklace',
   'AD Necklace Set (Choker + Second Necklace)',
   'Chutty (Antique)',
