@@ -40,6 +40,8 @@ const categories = [
   'Chutty (Antique)',
   'Chutty (AD)',
   'Hip Chain',
+  'Kerala Choker',
+  'Kerala Second Necklace',
   'Hair Accessories',
   'Bangles (Antique)',
   'Bangles (AD)',

@@ -31,6 +31,8 @@ const categories = [
   'Normal Second Necklace',
   'Normal Necklace Set (Choker + Second Necklace)',
   'AD Choker',
+  'Kerala Choker',
+  'Kerala Second Necklace',
   'AD Second Necklace',
   'AD Necklace Set (Choker + Second Necklace)',
   'Chutty (Antique)',
@@ -495,8 +497,8 @@ export default function ItemsManagement() {
                     min="0"
                     step="0.01"
                     className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${formData.supportsHalfPricing
-                        ? 'border-gray-300'
-                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                      ? 'border-gray-300'
+                      : 'border-gray-200 bg-gray-50 cursor-not-allowed'
                       }`}
                     placeholder="250"
                   />
@@ -527,8 +529,8 @@ export default function ItemsManagement() {
                     min="0"
                     step="0.01"
                     className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${formData.supportsHalfPricing
-                        ? 'border-gray-300'
-                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                      ? 'border-gray-300'
+                      : 'border-gray-200 bg-gray-50 cursor-not-allowed'
                       }`}
                     placeholder="1000"
                   />
