@@ -136,12 +136,12 @@ function BookingConfirmationContent() {
       {/* Header */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-5 h-5" />
               Back to Admin Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Booking Confirmation</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">Booking Confirmation</h1>
           </div>
         </div>
       </nav>
@@ -324,24 +324,24 @@ function BookingConfirmationContent() {
 
               {/* Actions */}
               <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="flex justify-center gap-4">
-                  <Link href="/admin/dashboard" className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                  <Link href="/admin/dashboard" className="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-center">
                     Continue
                   </Link>
-                  <Link href="/admin/invoices" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                  <Link href="/admin/invoices" className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center">
                     View Invoices
                   </Link>
                   {invoice ? (
                     <button
                       onClick={() => window.open(`/admin/invoices?search=${booking.bookingNumber}`, '_blank')}
-                      className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      className="w-full sm:w-auto px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
                       title="Download Invoice"
                     >
                       <Download className="w-4 h-4" />
                       Download Invoice
                     </button>
                   ) : (
-                    <div className="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
+                    <div className="w-full sm:w-auto px-6 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
                       <Download className="w-4 h-4" />
                       Invoice Not Available
                     </div>

@@ -105,37 +105,37 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Belles Avenue</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Belles Avenue</h1>
               <p className="text-sm text-gray-600">Admin Dashboard</p>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Link href="/admin/invoices" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                <FileText className="w-4 h-4" />
-                Manage Invoices
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <Link href="/admin/invoices" className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm">
+                <FileText className="w-4 h-4 inline" />
+                <span className="hidden sm:inline ml-1">Manage Invoices</span>
               </Link>
               <Link
                 href="/admin/items"
-                className="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors text-sm"
               >
                 <Package className="w-4 h-4" />
-                Manage Items
+                <span className="hidden sm:inline">Manage Items</span>
               </Link>
               <Link
                 href="/admin/bookings"
-                className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
               >
                 <Calendar className="w-4 h-4" />
-                Bookings
+                <span className="hidden sm:inline">Bookings</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
               >
                 <LogOut className="w-4 h-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
         <h2 className="text-3xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        
+
 
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center justify-between mb-4">

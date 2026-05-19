@@ -45,10 +45,10 @@ export default function Home() {
         </div>
 
         <div className="mb-12">
-          <h1 className="text-6xl font-bold text-gray-800 mb-4">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 mb-4">
             Belles Avenue
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600">
             Premium Rental & Fancy Shop
           </p>
         </div>
@@ -76,13 +76,7 @@ export default function Home() {
               Premium antique and AD jewelry for every occasion
             </p>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <div className="text-4xl mb-4">✨</div>
-            <h3 className="text-lg font-semibold mb-2">Easy Booking</h3>
-            <p className="text-gray-600 text-sm">
-              Simple and hassle-free rental process
-            </p>
-          </div>
+        
           <div className="bg-white p-6 rounded-xl shadow-md">
             <div className="text-4xl mb-4">🎯</div>
             <h3 className="text-lg font-semibold mb-2">Quality Assured</h3>

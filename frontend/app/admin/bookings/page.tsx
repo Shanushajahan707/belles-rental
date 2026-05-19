@@ -182,15 +182,15 @@ export default function BookingsManagement() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-5 h-5" />
               Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Manage Bookings</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">Manage Bookings</h1>
             <Link
               href="/admin/bookings/new"
-              className="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
               New Booking

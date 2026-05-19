@@ -222,12 +222,12 @@ export default function ItemsManagement() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-5 h-5" />
               Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Manage Rental Items</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">Manage Rental Items</h1>
             <div></div>
           </div>
         </div>
@@ -235,51 +235,51 @@ export default function ItemsManagement() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label htmlFor="itemStatusFilter" className="text-sm font-medium text-gray-700">Status</label>
-          <select
-            id="itemStatusFilter"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label htmlFor="itemStatusFilter" className="text-sm font-medium text-gray-700">Status</label>
+            <select
+              id="itemStatusFilter"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+            >
+              <option value="all">All</option>
+              <option value="available">Available</option>
+              <option value="booked">Booked</option>
+              <option value="running">Running</option>
+            </select>
+            <label htmlFor="itemCategoryFilter" className="text-sm font-medium text-gray-700">Category</label>
+            <select
+              id="itemCategoryFilter"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by code, name, or barcode"
+              className="w-full min-w-[200px] rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
+            />
+          </div>
+          <button
+            onClick={() => {
+              setFilterStatus('all');
+              setFilterCategory('all');
+              setSearchQuery('');
+            }}
+            className="inline-flex items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
           >
-            <option value="all">All</option>
-            <option value="available">Available</option>
-            <option value="booked">Booked</option>
-            <option value="running">Running</option>
-          </select>
-          <label htmlFor="itemCategoryFilter" className="text-sm font-medium text-gray-700">Category</label>
-          <select
-            id="itemCategoryFilter"
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          >
-            <option value="all">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by code, name, or barcode"
-            className="w-full min-w-[200px] rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          />
+            Reset Filters
+          </button>
         </div>
-        <button
-          onClick={() => {
-            setFilterStatus('all');
-            setFilterCategory('all');
-            setSearchQuery('');
-          }}
-          className="inline-flex items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
-        >
-          Reset Filters
-        </button>
-      </div>
-      <div className="flex justify-end mb-6">
+        <div className="flex justify-end mb-6">
           <button
             onClick={() => {
               setEditingItem(null);
@@ -494,11 +494,10 @@ export default function ItemsManagement() {
                     disabled={!formData.supportsHalfPricing}
                     min="0"
                     step="0.01"
-                    className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                      formData.supportsHalfPricing
+                    className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${formData.supportsHalfPricing
                         ? 'border-gray-300'
                         : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                    }`}
+                      }`}
                     placeholder="250"
                   />
                 </div>
@@ -527,11 +526,10 @@ export default function ItemsManagement() {
                     disabled={!formData.supportsHalfPricing}
                     min="0"
                     step="0.01"
-                    className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                      formData.supportsHalfPricing
+                    className={`w-full px-4 py-2 border text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${formData.supportsHalfPricing
                         ? 'border-gray-300'
                         : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                    }`}
+                      }`}
                     placeholder="1000"
                   />
                 </div>

@@ -195,12 +195,12 @@ export default function NewBookingPage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <Link href="/admin/bookings" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-5 h-5" />
               Back to Bookings
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800">New Booking</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">New Booking</h1>
             <div></div>
           </div>
         </div>

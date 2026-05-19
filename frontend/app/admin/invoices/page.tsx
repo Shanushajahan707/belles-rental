@@ -150,12 +150,12 @@ export default function InvoicesPage() {
       {/* Header */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-5 h-5" />
               Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Invoice Management</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">Invoice Management</h1>
           </div>
         </div>
       </nav>
@@ -195,19 +195,19 @@ export default function InvoicesPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-md p-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Invoices</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => router.push('/admin/bookings')}
-                className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors flex items-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors flex items-center justify-center gap-2"
               >
                 <Plus className="w-5 h-5" />
                 Generate Invoice
               </button>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
               >
                 <Plus className="w-5 h-5" />
                 Manual Invoice
@@ -300,7 +300,7 @@ export default function InvoicesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
-                        
+
                           <button
                             onClick={() => handleDownloadInvoice(invoice.invoiceNumber)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
@@ -327,7 +327,7 @@ export default function InvoicesPage() {
           )}
 
           {/* Invoice Details Modal */}
-       
+
         </div>
       </div>
     </div>
