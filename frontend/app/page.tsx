@@ -12,12 +12,13 @@ export default function Home() {
       try {
         const response = await api.get('/public/health');
         if (response.data?.status === 'ok') {
-          setBackendStatus('connected');
+          localStorage.setItem('backendStatus', 'connected');
+          setBackendStatus('connected');  
         } else {
           setBackendStatus('disconnected');
         }
       } catch (error) {
-        console.error('Backend health check failed:', error);
+        // console.error('Backend health check failed:', error);
         setBackendStatus('disconnected');
       }
     };
@@ -32,6 +33,8 @@ export default function Home() {
           {backendStatus === 'checking' ? (
             <div className="inline-flex items-center justify-center rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm">
               Checking backend connection...
+              <br />
+              Wait 60s...
             </div>
           ) : backendStatus === 'connected' ? (
             <div className="inline-flex items-center justify-center rounded-full bg-green-50 px-4 py-2 text-sm font-medium text-green-700 border border-green-200 shadow-sm">

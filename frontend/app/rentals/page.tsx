@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '@/config';
 import { Search, Filter } from 'lucide-react';
+import { checkBackendHealth, getCachedBackendStatus } from '@/lib/backendHealth';
 
 interface RentalItem {
   _id: string;
@@ -47,7 +48,7 @@ const categories = [
   'Bangles (Antique)',
   'Bangles (AD)',
   'Earrings (Antique)',
-  'Earchain (Antique)'
+  'Earchain (Antique)',
 ];
 
 export default function RentalsPage() {
@@ -71,6 +72,13 @@ export default function RentalsPage() {
 
   const fetchItems = async () => {
     try {
+      // Check backend health first
+      const backendStatus = await checkBackendHealth();
+      if (backendStatus === 'disconnected') {
+        setError('Backend is not reachable. Please check your connection or try again in 50 seconds.');
+        return;   
+      }
+
       const response = await fetch(`${API_URL}/items`);
       if (!response.ok) {
         if (response.status === 401) {

@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { ArrowLeft, Download, FileText, Search, Plus, Filter, Eye } from 'lucide-react';
 import { useToast } from '@/components/Toast';
+import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
 
 interface Invoice {
   _id: string;
@@ -39,12 +40,22 @@ export default function InvoicesPage() {
 
   const fetchInvoices = async () => {
     try {
+      // Check backend health first and redirect if disconnected
+      const isConnected = await checkBackendHealthWithRedirect(router);
+      if (!isConnected) {
+        return;
+      }
+
       const response = await api.get('/invoices');
       console.log('Invoices response:', response.data);
 
       setInvoices(response.data);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      toast.addToast({
+        message: 'Failed to load invoices. Please try again.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }

@@ -18,7 +18,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(toast.id);
-    }, toast.duration || 8000);
+    }, toast.duration || 5000);
 
     return () => clearTimeout(timer);
   }, [toast.id, toast.duration, onClose]);

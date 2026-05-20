@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { DollarSign, ShoppingBag, Clock, AlertTriangle, LogOut, Package, Calendar, Users, FileText } from 'lucide-react';
 import { useToast } from '@/components/Toast';
+import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
 
 
 interface DashboardStats {
@@ -66,6 +67,12 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
+      // Check backend health first and redirect if disconnected
+      const isConnected = await checkBackendHealthWithRedirect(router);
+      if (!isConnected) {
+        return;
+      }
+
       const response = await api.get('/bookings/dashboard/stats');
       setStats(response.data);
     } catch (error) {

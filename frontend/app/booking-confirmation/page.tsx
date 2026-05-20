@@ -8,6 +8,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Calendar, Clock, User, Phone, MapPin, DollarSign, Download } from 'lucide-react';
+import { checkBackendHealth } from '@/lib/backendHealth';
 
 interface Booking {
   _id: string;
@@ -71,6 +72,14 @@ function BookingConfirmationContent() {
 
   const fetchBooking = async () => {
     try {
+      // Check backend health first
+      const backendStatus = await checkBackendHealth();
+      if (backendStatus === 'disconnected') {
+        console.error('Backend is not reachable');
+        setLoading(false);
+        return;
+      }
+
       const response = await api.get(`/bookings/number/${bookingNumber}`);
       console.log('booking data', response.data);
       setBooking(response.data);

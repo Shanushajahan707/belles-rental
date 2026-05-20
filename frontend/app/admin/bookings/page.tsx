@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { Plus, ArrowLeft, Play, CheckCircle, Square, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/components/Toast';
+import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
 
 interface Booking {
   _id: string;
@@ -37,7 +38,7 @@ export default function BookingsManagement() {
   const router = useRouter();
   const toast = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'booked' | 'running' | 'completed' | 'overdue'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,10 +56,20 @@ export default function BookingsManagement() {
 
   const fetchBookings = async () => {
     try {
+      // Check backend health first and redirect if disconnected
+      const isConnected = await checkBackendHealthWithRedirect(router);
+      if (!isConnected) {
+        return;
+      }
+
       const response = await api.get('/bookings');
       setBookings(response.data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
+      toast.addToast({
+        message: 'Failed to load bookings. Please try again.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }

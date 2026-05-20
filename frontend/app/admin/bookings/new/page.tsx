@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Trash2, DollarSign, Calculator } from 'lucide-react';
 import { useToast } from '@/components/Toast';
+import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
 
 interface RentalItem {
   _id: string;
@@ -70,6 +71,12 @@ export default function NewBookingPage() {
 
   const fetchAvailableItems = async () => {
     try {
+      // Check backend health first and redirect if disconnected
+      const isConnected = await checkBackendHealthWithRedirect(router);
+      if (!isConnected) {
+        return;
+      }
+
       console.log('fetch called');
 
       const response = await api.get('/bookings/fetchItems');
@@ -78,6 +85,10 @@ export default function NewBookingPage() {
       setItems(response.data);
     } catch (error) {
       console.error('Error fetching items:', error);
+      toast.addToast({
+        message: 'Failed to load available items. Please try again.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }

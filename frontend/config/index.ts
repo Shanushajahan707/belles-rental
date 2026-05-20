@@ -9,4 +9,6 @@ export const API_URL = IS_PRODUCTION
   : 'http://localhost:5000/api';
 
 // Environment info
+console.log('Environment:', IS_PRODUCTION ? 'production' : 'development');
+
 export const ENVIRONMENT = IS_PRODUCTION ? 'production' : 'development';
