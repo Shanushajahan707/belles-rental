@@ -68,7 +68,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-xl shadow-md">
             <div className="text-4xl mb-4">💎</div>
             <h3 className="text-lg font-semibold mb-2">Exquisite Jewelry</h3>
