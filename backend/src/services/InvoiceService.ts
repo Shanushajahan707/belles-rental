@@ -58,7 +58,7 @@ export class InvoiceService {
           additionalCharges,
           totalAmount,
           balanceAmount,
-          shopName: 'Belles Beauty Hub',
+          shopName: 'Belles Avenue Fashion Hub',
           shopAddress: 'Belles Avenue, Punalur, Kerala',
           shopPhone: '+91 70250 00970',
           shopEmail: 'avenuesbeautyhub@gmail.com',
@@ -191,7 +191,7 @@ export class InvoiceService {
     // Title
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    doc.text('Belles Beauty Hub', pageWidth / 2, 15, { align: 'center' });
+    doc.text('Belles Avenue Fashion Hub', pageWidth / 2, 15, { align: 'center' });
 
     doc.setFontSize(22);
     doc.text('INVOICE', pageWidth / 2, 25, { align: 'center' });
