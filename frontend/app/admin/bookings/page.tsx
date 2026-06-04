@@ -485,10 +485,10 @@ export default function BookingsManagement() {
                           <span className="text-gray-400 text-xs">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 max-w-[150px]">
                         {booking.note ? (
-                          <div className="max-w-xs">
-                            <p className="text-xs text-blue-700 truncate" title={booking.note}>
+                          <div className="max-w-[150px]">
+                            <p className="text-xs text-blue-700 truncate whitespace-nowrap" title={booking.note}>
                               {booking.note}
                             </p>
                           </div>
