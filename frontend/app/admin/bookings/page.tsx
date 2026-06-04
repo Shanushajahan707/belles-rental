@@ -253,7 +253,7 @@ export default function BookingsManagement() {
             </div>
           </div>
           {/* Mobile Card View */}
-          <div className="md:hidden max-h-96 overflow-y-auto">
+          <div className="md:hidden max-h-[600px] overflow-y-auto">
             {filteredBookings.map(booking => (
               <div 
                 key={booking._id} 
@@ -401,7 +401,7 @@ export default function BookingsManagement() {
 
           {/* Desktop Table View */}
           <div className="hidden md:block">
-            <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
               <table className="w-full min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
