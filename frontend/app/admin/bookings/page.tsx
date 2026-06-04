@@ -43,6 +43,8 @@ export default function BookingsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -173,6 +175,11 @@ export default function BookingsManagement() {
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsModalOpen(true);
+  };
+
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setIsImageModalOpen(true);
   };
 
   const filteredBookings = bookings.filter((booking) => {
@@ -678,7 +685,7 @@ export default function BookingsManagement() {
                   {selectedBooking.items.map((item, index) => (
                     <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
                       <div className="flex flex-col md:flex-row gap-4">
-                        <div className="w-full md:w-32 h-32 flex-shrink-0 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                        <div className="w-full md:w-32 h-32 flex-shrink-0 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
                           {item.itemId?.image ? (
                             <img
                               src={item.itemId.image.includes('drive.google.com')
@@ -687,6 +694,10 @@ export default function BookingsManagement() {
                               }
                               alt={item.itemName || item.itemId?.name || 'Item'}
                               className="w-full h-full object-cover rounded-lg"
+                              onClick={() => handleImageClick(item.itemId.image.includes('drive.google.com')
+                                ? `https://drive.google.com/thumbnail?id=${item.itemId.image.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
+                                : item.itemId.image
+                              )}
                               onError={(e) => {
                                 const img = e.target as HTMLImageElement;
                                 img.style.display = 'none';
@@ -773,6 +784,25 @@ export default function BookingsManagement() {
                 })}</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Full-Screen Modal */}
+      {isImageModalOpen && selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-[60]">
+          <button
+            onClick={() => setIsImageModalOpen(false)}
+            className="absolute top-4 right-4 p-2 bg-white rounded-full hover:bg-gray-200 transition-colors z-10"
+          >
+            <X className="w-6 h-6 text-gray-800" />
+          </button>
+          <div className="max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center">
+            <img
+              src={selectedImage}
+              alt="Full size image"
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
           </div>
         </div>
       )}
