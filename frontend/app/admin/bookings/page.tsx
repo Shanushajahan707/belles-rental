@@ -719,7 +719,7 @@ export default function BookingsManagement() {
                             </div>
                             {item.priceType && (
                               <span className={`px-3 py-1 text-xs font-medium rounded ${item.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                {item.priceType === 'half' ? 'Half Day' : 'Full Day'}
+                                {item.priceType === 'half' ? 'Half Set' : 'Full Set'}
                               </span>
                             )}
                           </div>
@@ -741,6 +741,7 @@ export default function BookingsManagement() {
               </div>
 
               {/* Payment Information */}
+              {selectedBooking.discount > 0 || (selectedBooking.additionalCharges && selectedBooking.additionalCharges > 0) && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Payment Information</h3>
                 <div className="space-y-2">
@@ -764,6 +765,7 @@ export default function BookingsManagement() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Notes */}
               {selectedBooking.note && (
