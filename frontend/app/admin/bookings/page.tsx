@@ -41,6 +41,8 @@ export default function BookingsManagement() {
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'booked' | 'running' | 'completed' | 'overdue'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -168,6 +170,11 @@ export default function BookingsManagement() {
     }
   };
 
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsModalOpen(true);
+  };
+
   const filteredBookings = bookings.filter((booking) => {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
     const search = searchQuery.trim().toLowerCase();
@@ -241,7 +248,11 @@ export default function BookingsManagement() {
           {/* Mobile Card View */}
           <div className="md:hidden max-h-96 overflow-y-auto">
             {filteredBookings.map(booking => (
-              <div key={booking._id} className="border-b border-gray-200 p-4 space-y-3">
+              <div 
+                key={booking._id} 
+                className="border-b border-gray-200 p-4 space-y-3 cursor-pointer hover:bg-gray-50"
+                onClick={() => handleViewDetails(booking)}
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-bold text-gray-900">{booking.bookingNumber}</p>
@@ -305,32 +316,72 @@ export default function BookingsManagement() {
                   <div className="flex gap-2">
                     {booking.status === 'booked' && (
                       <>
-                        <Link href={`/admin/bookings/${booking._id}/edit`} className="p-2 bg-gray-100 text-gray-600 rounded-lg">
+                        <Link 
+                          href={`/admin/bookings/${booking._id}/edit`} 
+                          className="p-2 bg-gray-100 text-gray-600 rounded-lg"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Edit className="w-4 h-4" />
                         </Link>
-                        <button onClick={() => handleStartRental(booking._id)} className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartRental(booking._id);
+                          }} 
+                          className="p-2 bg-blue-100 text-blue-600 rounded-lg"
+                        >
                           <Play className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDeleteBooking(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteBooking(booking._id);
+                          }} 
+                          className="p-2 bg-red-100 text-red-600 rounded-lg"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </>
                     )}
                     {booking.status === 'running' && (
                       <>
-                        <button onClick={() => handleCompleteRental(booking._id)} className="p-2 bg-green-100 text-green-600 rounded-lg">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCompleteRental(booking._id);
+                          }} 
+                          className="p-2 bg-green-100 text-green-600 rounded-lg"
+                        >
                           <CheckCircle className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleStopRental(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStopRental(booking._id);
+                          }} 
+                          className="p-2 bg-red-100 text-red-600 rounded-lg"
+                        >
                           <Square className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDeleteBooking(booking._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteBooking(booking._id);
+                          }} 
+                          className="p-2 bg-red-100 text-red-600 rounded-lg"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </>
                     )}
                     {booking.status === 'overdue' && (
-                      <button onClick={() => handleCompleteRental(booking._id)} className="p-2 bg-green-100 text-green-600 rounded-lg">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCompleteRental(booking._id);
+                        }} 
+                        className="p-2 bg-green-100 text-green-600 rounded-lg"
+                      >
                         <CheckCircle className="w-4 h-4" />
                       </button>
                     )}
@@ -363,7 +414,11 @@ export default function BookingsManagement() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredBookings.map(booking => (
-                    <tr key={booking._id} className="hover:bg-gray-50">
+                    <tr 
+                      key={booking._id} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleViewDetails(booking)}
+                    >
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900">{booking.bookingNumber}</p>
                       </td>
@@ -454,18 +509,25 @@ export default function BookingsManagement() {
                                 href={`/admin/bookings/${booking._id}/edit`}
                                 className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                                 title="Edit Booking"
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <Edit className="w-4 h-4" />
                               </Link>
                               <button
-                                onClick={() => handleStartRental(booking._id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartRental(booking._id);
+                                }}
                                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Start Rental"
                               >
                                 <Play className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleDeleteBooking(booking._id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteBooking(booking._id);
+                                }}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Delete Booking"
                               >
@@ -476,14 +538,20 @@ export default function BookingsManagement() {
                           {booking.status === 'running' && (
                             <>
                               <button
-                                onClick={() => handleCompleteRental(booking._id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCompleteRental(booking._id);
+                                }}
                                 className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                 title="Complete Rental"
                               >
                                 <CheckCircle className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleStopRental(booking._id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStopRental(booking._id);
+                                }}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Stop Rental"
                               >
@@ -493,7 +561,10 @@ export default function BookingsManagement() {
                           )}
                           {booking.status === 'overdue' && (
                             <button
-                              onClick={() => handleCompleteRental(booking._id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCompleteRental(booking._id);
+                              }}
                               className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                               title="Complete Rental"
                             >
@@ -518,6 +589,182 @@ export default function BookingsManagement() {
           </div>
         </div>
       </div >
+
+      {/* Booking Details Modal */}
+      {isModalOpen && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+              <h2 className="text-2xl font-bold text-gray-800">Booking Details</h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Customer Information */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Customer Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Booking Number</p>
+                    <p className="font-medium text-gray-900">{selectedBooking.bookingNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Customer Name</p>
+                    <p className="font-medium text-gray-900">{selectedBooking.customerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Phone</p>
+                    <p className="font-medium text-gray-900">{selectedBooking.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Address</p>
+                    <p className="font-medium text-gray-900">{selectedBooking.address}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Created By</p>
+                    <p className="font-medium text-gray-900">{selectedBooking.createdBy}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Status</p>
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedBooking.status)}`}>
+                      {selectedBooking.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rental Period */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Rental Period</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Start Date</p>
+                    <p className="font-medium text-gray-900">{new Date(selectedBooking.startDate).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Return Date</p>
+                    <p className="font-medium text-gray-900">{new Date(selectedBooking.returnDate).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}</p>
+                  </div>
+                  {selectedBooking.actualReturnDate && (
+                    <div>
+                      <p className="text-sm text-gray-600">Actual Return Date</p>
+                      <p className="font-medium text-gray-900">{new Date(selectedBooking.actualReturnDate).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Booking Items */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Booking Items</h3>
+                <div className="space-y-4">
+                  {selectedBooking.items.map((item, index) => (
+                    <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="flex flex-col md:flex-row gap-4">
+                        {item.itemId?.image && (
+                          <div className="w-full md:w-32 h-32 flex-shrink-0">
+                            <img
+                              src={item.itemId.image}
+                              alt={item.itemName || item.itemId?.name || 'Item'}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-semibold text-gray-900">{item.itemName || item.itemId?.name || 'Unknown Item'}</p>
+                              <p className="text-sm text-gray-600">Code: {item.itemCode || item.itemId?.itemCode || 'N/A'}</p>
+                            </div>
+                            {item.priceType && (
+                              <span className={`px-3 py-1 text-xs font-medium rounded ${item.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {item.priceType === 'half' ? 'Half Day' : 'Full Day'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <p className="text-gray-600">Rent Price</p>
+                              <p className="font-medium text-gray-900">₹{item.rentPrice}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Security Deposit</p>
+                              <p className="font-medium text-gray-900">₹{item.security}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Payment Information</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Discount</span>
+                    <span className="font-medium text-gray-900">-₹{selectedBooking.discount}</span>
+                  </div>
+                  {selectedBooking.additionalCharges && selectedBooking.additionalCharges > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Additional Charges</span>
+                      <span className="font-medium text-orange-600">+₹{selectedBooking.additionalCharges}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-300 pt-2 mt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-gray-800">Total Amount</span>
+                      <span className="text-lg font-bold text-pink-600">₹{selectedBooking.totalAmount}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedBooking.note && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">Admin Note</h3>
+                  <p className="text-blue-700">{selectedBooking.note}</p>
+                </div>
+              )}
+
+              {/* Created At */}
+              <div className="text-sm text-gray-500 text-center">
+                <p>Created on {new Date(selectedBooking.createdAt).toLocaleString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 }
