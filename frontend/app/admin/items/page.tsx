@@ -222,6 +222,9 @@ export default function ItemsManagement() {
       item.barcode.toLowerCase().includes(search);
 
     return matchesStatus && matchesCategory && matchesSearch;
+  }).sort((a, b) => {
+    // Sort by itemCode numerically/alphabetically
+    return a.itemCode.localeCompare(b.itemCode, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   if (loading) {
@@ -321,7 +324,7 @@ export default function ItemsManagement() {
         </div>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
@@ -340,22 +343,22 @@ export default function ItemsManagement() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredItems.map(item => (
-                  <tr key={item._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.itemCode}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{item.barcode}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{item.name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{item.category}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.purchasePrice}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.rentPrice}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.halfRentPrice}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.securityDeposit}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">₹{item.halfSecurityDeposit}</td>
-                    <td className="px-6 py-4">
+                  <tr key={item._id} className="hover:bg-gray-50 cursor-pointer">
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm font-medium text-gray-900">{item.itemCode}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">{item.barcode}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">{item.name}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">{item.category}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">₹{item.purchasePrice}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">₹{item.rentPrice}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">₹{item.halfRentPrice}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">₹{item.securityDeposit}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">₹{item.halfSecurityDeposit}</td>
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
                         {item.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/admin/items/${item._id}`}
