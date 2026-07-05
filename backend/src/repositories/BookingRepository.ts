@@ -3,7 +3,17 @@ import Booking, { IBooking } from '../models/Booking';
 
 export class BookingRepository {
   async findAll(): Promise<IBooking[]> {
-    return Booking.find().sort({ createdAt: -1 }).populate('items.itemId');
+    const bookings = await Booking.find().populate('items.itemId');
+
+    // Sort by status: running first, then booked, then completed, then overdue
+    const statusOrder = { running: 0, booked: 1, completed: 2, overdue: 3 };
+    return bookings.sort((a, b) => {
+      const orderA = statusOrder[a.status as keyof typeof statusOrder] ?? 4;
+      const orderB = statusOrder[b.status as keyof typeof statusOrder] ?? 4;
+      if (orderA !== orderB) return orderA - orderB;
+      // If same status, sort by startDate
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+    });
   }
 
   async findById(id: string): Promise<IBooking | null> {
@@ -70,12 +80,26 @@ export class BookingRepository {
   }
 
   async findByDateRange(startDate: Date, endDate: Date): Promise<IBooking[]> {
-    return Booking.find({
-      createdAt: {
-        $gte: startDate,
-        $lte: endDate
-      }
-    }).sort({ createdAt: 1 });
+    // Normalize dates to UTC to avoid timezone issues
+    const normalizedStart = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+    const normalizedEnd = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999));
+
+    // Find bookings that overlap with the date range
+    // A booking overlaps if: (booking.startDate <= range.endDate) AND (booking.returnDate >= range.startDate)
+    const bookings = await Booking.find({
+      startDate: { $lte: normalizedEnd },
+      returnDate: { $gte: normalizedStart }
+    }).populate('items.itemId');
+
+    // Sort by status: running first, then booked, then completed, then overdue
+    const statusOrder = { running: 0, booked: 1, completed: 2, overdue: 3 };
+    return bookings.sort((a, b) => {
+      const orderA = statusOrder[a.status as keyof typeof statusOrder] ?? 4;
+      const orderB = statusOrder[b.status as keyof typeof statusOrder] ?? 4;
+      if (orderA !== orderB) return orderA - orderB;
+      // If same status, sort by startDate
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+    });
   }
 
   async getStats(): Promise<{

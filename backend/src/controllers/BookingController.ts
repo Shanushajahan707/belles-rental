@@ -12,7 +12,11 @@ export class BookingController {
 
   async getAllBookings(req: Request, res: Response): Promise<void> {
     try {
-      const bookings = await this.bookingService.getAllBookings();
+      const { startDate, endDate } = req.query;
+      const bookings = await this.bookingService.getAllBookings(
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
       res.json(bookings);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
