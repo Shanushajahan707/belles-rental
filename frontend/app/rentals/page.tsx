@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { API_URL } from '@/config';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Gem, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { checkBackendHealth, getCachedBackendStatus } from '@/lib/backendHealth';
+import { format } from 'date-fns';
+import Link from 'next/link';
 
 interface RentalItem {
   _id: string;
@@ -151,10 +153,8 @@ export default function RentalsPage() {
     }
 
     if (searchQuery) {
-      filtered = filtered.filter(
-        item =>
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.itemCode.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(item =>
+        item.itemCode.toLowerCase() === searchQuery.toLowerCase()
       );
     }
 
@@ -178,21 +178,27 @@ export default function RentalsPage() {
     if (!dateString) return 'Date unavailable';
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return 'Invalid date';
-    return date.toLocaleDateString();
+    return format(date, 'd/MMMM/yyyy');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-xl text-gray-700 font-medium">Loading rentals...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-xl w-full bg-white rounded-xl shadow-md p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-gray-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-8 h-8 text-red-500" />
+          </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Unable to load rentals</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
@@ -201,7 +207,7 @@ export default function RentalsPage() {
               setError('');
               fetchItems();
             }}
-            className="inline-flex items-center justify-center rounded-lg bg-pink-500 px-6 py-3 text-white font-semibold hover:bg-pink-600"
+            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
           >
             Try again
           </button>
@@ -211,20 +217,55 @@ export default function RentalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 overflow-x-hidden">
+      {/* Navigation */}
+      <nav className="w-full bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center gap-2">
+              <Gem className="w-8 h-8 text-pink-600" />
+              <span className="text-xl font-bold text-gray-800">Belles Avenue</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/"
+                className="text-gray-600 hover:text-pink-600 transition-colors font-medium"
+              >
+                Home
+              </Link>
+              <Link
+                href="/admin/login"
+                className="text-gray-600 hover:text-pink-600 transition-colors font-medium"
+              >
+                Admin
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white py-8 sm:py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Our Rental Collection</h1>
+          <p className="text-base sm:text-lg text-pink-100 max-w-2xl mx-auto">
+            Discover exquisite jewelry and premium items for your special occasions
+          </p>
+        </div>
+      </div>
+
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">Our Rentals</h1>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 overflow-hidden">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search by name or item code..."
+                placeholder="Search by item code..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 text-black rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all shadow-sm"
               />
             </div>
 
@@ -233,12 +274,17 @@ export default function RentalsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="pl-10 text-sm pr-8 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white w-full max-w-full truncate"
+                className="pl-10 text-sm pr-10 py-3 border border-gray-200 text-black rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white w-full max-w-full truncate shadow-sm cursor-pointer hover:border-pink-300 transition-all"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>{category}</option>
                 ))}
               </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
 
             <div className="relative min-w-0">
@@ -246,13 +292,18 @@ export default function RentalsPage() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="pl-10 text-sm pr-8 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white w-full max-w-full"
+                className="pl-10 text-sm pr-10 py-3 border border-gray-200 text-black rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white w-full max-w-full shadow-sm cursor-pointer hover:border-pink-300 transition-all"
               >
                 <option value="All">All Statuses</option>
                 <option value="Available">Available</option>
                 <option value="Booked">Booked</option>
                 <option value="Running">Running</option>
               </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -261,8 +312,12 @@ export default function RentalsPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredItems.map(item => (
-            <div key={item._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+            <div
+              key={item._id}
+              className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 cursor-pointer"
+              onClick={() => item.image && setSelectedImage(item.image)}
+            >
+              <div className="h-48 bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center relative overflow-hidden group">
                 {item.image ? (
                   <img
                     src={item.image.includes('drive.google.com')
@@ -270,8 +325,7 @@ export default function RentalsPage() {
                       : item.image
                     }
                     alt={item.name}
-                    onClick={() => setSelectedImage(item.image)}
-                    className="h-full w-full object-cover cursor-pointer"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     onError={(e) => {
                       e.currentTarget.src = 'https://via.placeholder.com/400x300.png?text=Image+Not+Available';
                     }}
@@ -279,12 +333,16 @@ export default function RentalsPage() {
                 ) : (
                   <div className="text-6xl">💎</div>
                 )}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
               </div>
 
-              <div className="p-4">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">{item.name}</h3>
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)} w-fit`}>
+              <div className="p-5">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800 line-clamp-2">{item.name}</h3>
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)} w-fit shrink-0 flex items-center gap-1`}>
+                    {item.status === 'available' && <CheckCircle className="w-3 h-3" />}
+                    {item.status === 'booked' && <Clock className="w-3 h-3" />}
+                    {item.status === 'running' && <XCircle className="w-3 h-3" />}
                     {item.status}
                   </span>
                 </div>
@@ -292,12 +350,12 @@ export default function RentalsPage() {
                 <p className="text-xs sm:text-sm text-gray-600 mb-1">
                   <span className="font-medium">Code:</span> {item.itemCode}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-1">
                   <span className="font-medium">Category:</span> {item.category}
                 </p>
 
-                <div className="border-t pt-3 mt-3">
-                  <div className="space-y-2">
+                <div className="border-t border-gray-100 pt-4 mt-4">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-xs sm:text-sm font-medium text-gray-700">Full Price:</span>
                       <div className="text-right">
@@ -317,7 +375,7 @@ export default function RentalsPage() {
 
                   </div>
                   {item.status === 'booked' && (
-                    <div className="mt-3 p-2 sm:p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                       <p className="text-xs sm:text-sm text-yellow-800 font-medium flex items-center gap-2 mb-2">
                         <span className="text-yellow-600">⚠️</span>
                         Currently Booked
@@ -330,7 +388,7 @@ export default function RentalsPage() {
                     </div>
                   )}
                   {item.status === 'running' && (
-                    <div className="mt-3 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                       {bookingInfo[item._id] && (
                         <div className="text-xs text-blue-700 space-y-1">
                           <p><span className="font-semibold">Return By:</span> {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
@@ -347,51 +405,50 @@ export default function RentalsPage() {
         </div>
 
         {filteredItems.length === 0 && (
-          <div className="text-center py-12 px-4">
-            <div className="text-4xl sm:text-6xl mb-4">🔍</div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No items found</h3>
-            <p className="text-sm sm:text-base text-gray-500">Try adjusting your search or filter criteria</p>
+          <div className="text-center py-16 px-4">
+            <div className="text-5xl sm:text-7xl mb-6">🔍</div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-3">No items found</h3>
+            <p className="text-sm sm:text-base text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedCategory('All');
+                setSelectedStatus('All');
+              }}
+              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+            >
+              Clear Filters
+            </button>
           </div>
         )}
       </div>
 
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative"
+            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-auto relative animate-in zoom-in duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute top-2 right-2 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+              className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg hover:bg-white transition-all hover:scale-110 group"
               aria-label="Close"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-gray-700"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <XCircle className="w-6 h-6 text-gray-700 group-hover:text-pink-600 transition-colors" />
             </button>
-            <img
-              src={selectedImage.includes('drive.google.com')
-                ? `https://drive.google.com/thumbnail?id=${selectedImage.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
-                : selectedImage
-              }
-              alt="Full View"
-              className="w-full h-full object-contain"
-            />
+            <div className="relative w-full flex items-center justify-center bg-gray-100 p-4">
+              <img
+                src={selectedImage.includes('drive.google.com')
+                  ? `https://drive.google.com/thumbnail?id=${selectedImage.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
+                  : selectedImage
+                }
+                alt="Full View"
+                className="max-w-full object-contain"
+              />
+            </div>
           </div>
         </div>
       )}

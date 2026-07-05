@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { Plus, ArrowLeft, Play, CheckCircle, Square, Trash2, Edit, X } from 'lucide-react';
+import { Plus, ArrowLeft, Play, CheckCircle, Square, Trash2, Edit, X, Calendar } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
 
@@ -45,6 +45,7 @@ export default function BookingsManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
 
   useEffect(() => {
     checkAuth();
@@ -66,7 +67,13 @@ export default function BookingsManagement() {
         return;
       }
 
-      const response = await api.get('/bookings');
+      let url = '/bookings';
+      const params = new URLSearchParams();
+      if (dateRange.startDate) params.append('startDate', dateRange.startDate);
+      if (dateRange.endDate) params.append('endDate', dateRange.endDate);
+      if (params.toString()) url += `?${params.toString()}`;
+
+      const response = await api.get(url);
       setBookings(response.data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -250,6 +257,52 @@ export default function BookingsManagement() {
                 placeholder="Search by booking #, customer, phone, or created by"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
               />
+            </div>
+          </div>
+          {/* Date Range Filter */}
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Filter by Date:</span>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 whitespace-nowrap">From:</label>
+                  <input
+                    type="date"
+                    value={dateRange.startDate}
+                    onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                    className="px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-xs text-gray-800"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 whitespace-nowrap">To:</label>
+                  <input
+                    type="date"
+                    value={dateRange.endDate}
+                    onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                    className="px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-xs text-gray-800"
+                  />
+                </div>
+                <button
+                  onClick={fetchBookings}
+                  className="px-3 py-1 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors text-xs font-medium"
+                >
+                  Apply
+                </button>
+                {(dateRange.startDate || dateRange.endDate) && (
+                  <button
+                    onClick={() => {
+                      setDateRange({ startDate: '', endDate: '' });
+                      fetchBookings();
+                    }}
+                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-xs font-medium"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           {/* Mobile Card View */}

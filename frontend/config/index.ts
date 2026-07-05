@@ -1,7 +1,7 @@
 // Simple Development/Production Flag Configuration
 // Change IS_PRODUCTION to true for production, false for development
 
-export const IS_PRODUCTION = true; // <-- SWITCH THIS FLAG
+export const IS_PRODUCTION = false; // <-- SWITCH THIS FLAG
 
 // API URLs based on flag
 export const API_URL = IS_PRODUCTION

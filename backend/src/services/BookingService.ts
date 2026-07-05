@@ -12,7 +12,10 @@ export class BookingService {
     this.rentalItemRepository = new RentalItemRepository();
   }
 
-  async getAllBookings(): Promise<IBooking[]> {
+  async getAllBookings(startDate?: Date, endDate?: Date): Promise<IBooking[]> {
+    if (startDate && endDate) {
+      return this.bookingRepository.findByDateRange(startDate, endDate);
+    }
     return this.bookingRepository.findAll();
   }
 
