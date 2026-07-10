@@ -142,7 +142,7 @@ export class BookingRepository {
 
     const bookings = await Booking.find({
       startDate: { $gte: monthStart, $lte: monthEnd },
-      status: { $in: ['completed', 'running', 'booked'] }
+      status: 'completed'
     }).populate('items.itemId');
 
     let totalRent = 0;
