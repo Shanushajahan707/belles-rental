@@ -373,6 +373,9 @@ export default function AdminDashboard() {
                   ))}
                 </select>
               </div>
+              <span className="text-sm text-black font-medium">
+                ({selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' })})
+              </span>
             </div>
           </div>
 
