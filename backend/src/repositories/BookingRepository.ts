@@ -127,4 +127,49 @@ export class BookingRepository {
       overdue: overdue.length,
     };
   }
+
+  async getMonthlyEarnings(year: number, month: number): Promise<{
+    totalRent: number;
+    totalSecurity: number;
+    totalRentDiscount: number;
+    totalSecurityDiscount: number;
+    netEarnings: number;
+    bookingCount: number;
+    bookings: IBooking[];
+  }> {
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const bookings = await Booking.find({
+      startDate: { $gte: monthStart, $lte: monthEnd },
+      status: { $in: ['completed', 'running', 'booked'] }
+    }).populate('items.itemId');
+
+    let totalRent = 0;
+    let totalSecurity = 0;
+    let totalRentDiscount = 0;
+    let totalSecurityDiscount = 0;
+
+    bookings.forEach(booking => {
+      const bookingRent = booking.items.reduce((sum, item) => sum + (item.rentPrice || 0), 0);
+      const bookingSecurity = booking.items.reduce((sum, item) => sum + (item.security || 0), 0);
+      
+      totalRent += bookingRent;
+      totalSecurity += bookingSecurity;
+      totalRentDiscount += booking.rentDiscount || 0;
+      totalSecurityDiscount += booking.securityDiscount || 0;
+    });
+
+    const netEarnings = totalRent - totalRentDiscount;
+
+    return {
+      totalRent,
+      totalSecurity,
+      totalRentDiscount,
+      totalSecurityDiscount,
+      netEarnings,
+      bookingCount: bookings.length,
+      bookings
+    };
+  }
 }

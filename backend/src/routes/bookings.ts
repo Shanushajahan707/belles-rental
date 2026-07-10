@@ -13,6 +13,7 @@ router.get('/item/:itemId', authenticate, (req: Request, res: Response) => booki
 router.get('/public/item/:itemId', (req: Request, res: Response) => bookingController.getBookingHistoryByItemId(req, res));
 router.get('/item/:itemId/stats', authenticate, (req: Request, res: Response) => bookingController.getItemStats(req, res));
 router.get('/item/:itemId/earnings', authenticate, (req: Request, res: Response) => bookingController.getItemEarnings(req, res));
+router.get('/monthly-earnings', authenticate, (req: Request, res: Response) => bookingController.getMonthlyEarnings(req, res));
 router.get('/items', authenticate, (req: Request, res: Response) => bookingController.getItems(req, res));
 router.get('/number/:bookingNumber', authenticate, (req: Request, res: Response) => bookingController.getBookingByNumber(req, res));
 router.get('/:id', authenticate, (req: Request, res: Response) => bookingController.getBookingById(req, res));

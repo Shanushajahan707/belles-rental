@@ -20,6 +20,16 @@ interface DashboardStats {
   overdueBookings: any[];
 }
 
+interface MonthlyEarnings {
+  totalRent: number;
+  totalSecurity: number;
+  totalRentDiscount: number;
+  totalSecurityDiscount: number;
+  netEarnings: number;
+  bookingCount: number;
+  bookings: any[];
+}
+
 interface TodayBooking {
   _id: string;
   customerName: string;
@@ -40,11 +50,20 @@ export default function AdminDashboard() {
   const [searchOverdue, setSearchOverdue] = useState('');
   const [searchDueToday, setSearchDueToday] = useState('');
 
+  const [monthlyEarnings, setMonthlyEarnings] = useState<MonthlyEarnings | null>(null);
+  const [loadingMonthlyEarnings, setLoadingMonthlyEarnings] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+
   useEffect(() => {
     checkAuth();
     fetchStats();
     fetchTodayBookings();
+    fetchMonthlyEarnings();
   }, []);
+
+  useEffect(() => {
+    fetchMonthlyEarnings();
+  }, [selectedMonth]);
   const fetchTodayBookings = async () => {
     try {
       const timestamp = new Date().getTime();
@@ -88,6 +107,24 @@ export default function AdminDashboard() {
       router.push('/admin/login');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMonthlyEarnings = async () => {
+    try {
+      setLoadingMonthlyEarnings(true);
+      const year = selectedMonth.getFullYear();
+      const month = selectedMonth.getMonth() + 1;
+      const response = await api.get(`/bookings/monthly-earnings?year=${year}&month=${month}`);
+      setMonthlyEarnings(response.data);
+    } catch (error) {
+      console.error('Error fetching monthly earnings:', error);
+      toast.addToast({
+        message: 'Failed to load monthly earnings',
+        type: 'error',
+      });
+    } finally {
+      setLoadingMonthlyEarnings(false);
     }
   };
 
@@ -298,6 +335,101 @@ export default function AdminDashboard() {
               </defs>
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Monthly Earnings Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-white/50 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h3 className="text-lg font-bold text-gray-800">Monthly Earnings</h3>
+            <div className="flex items-center gap-2">
+              <input
+                type="month"
+                value={`${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, '0')}`}
+                onChange={(e) => setSelectedMonth(new Date(e.target.value + '-01'))}
+                className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+              />
+            </div>
+          </div>
+
+          {loadingMonthlyEarnings ? (
+            <div className="text-center py-8">
+              <div className="text-xl">Loading earnings data...</div>
+            </div>
+          ) : monthlyEarnings ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                  <p className="text-sm text-green-600 font-medium mb-1">Total Rent</p>
+                  <p className="text-2xl font-bold text-green-800">₹{monthlyEarnings.totalRent.toLocaleString()}</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+                  <p className="text-sm text-blue-600 font-medium mb-1">Total Security</p>
+                  <p className="text-2xl font-bold text-blue-800">₹{monthlyEarnings.totalSecurity.toLocaleString()}</p>
+                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border border-orange-100">
+                  <p className="text-sm text-orange-600 font-medium mb-1">Rent Discount</p>
+                  <p className="text-2xl font-bold text-orange-800">-₹{monthlyEarnings.totalRentDiscount.toLocaleString()}</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-100">
+                  <p className="text-sm text-purple-600 font-medium mb-1">Net Earnings</p>
+                  <p className="text-2xl font-bold text-purple-800">₹{monthlyEarnings.netEarnings.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-purple-600 font-medium">Total Bookings</p>
+                    <p className="text-3xl font-bold text-purple-800">{monthlyEarnings.bookingCount}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Earnings Calculation:</p>
+                    <p className="text-sm text-gray-700">Total Rent - Rent Discount = Net Earnings</p>
+                    <p className="text-sm text-gray-700">₹{monthlyEarnings.totalRent.toLocaleString()} - ₹{monthlyEarnings.totalRentDiscount.toLocaleString()} = ₹{monthlyEarnings.netEarnings.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {monthlyEarnings.bookingCount > 0 && (
+                <div>
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Bookings this month</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {monthlyEarnings.bookings.map((booking) => (
+                      <div key={booking._id} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-gray-800">{booking.bookingNumber}</p>
+                            <p className="text-sm text-gray-600">{booking.customerName}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(booking.startDate).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-gray-700">
+                              Rent: ₹{booking.items.reduce((sum: number, item: any) => sum + item.rentPrice, 0).toLocaleString()}
+                            </p>
+                            {booking.rentDiscount > 0 && (
+                              <p className="text-xs text-orange-600">
+                                Discount: -₹{booking.rentDiscount.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No earnings data for this month</p>
+            </div>
+          )}
         </div>
 
         {stats.overdue > 0 && (

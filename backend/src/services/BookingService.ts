@@ -667,4 +667,16 @@ export class BookingService {
         return total + Math.max(0, individualEarnings); // Ensure non-negative
       }, 0);
   }
+
+  async getMonthlyEarnings(year: number, month: number): Promise<{
+    totalRent: number;
+    totalSecurity: number;
+    totalRentDiscount: number;
+    totalSecurityDiscount: number;
+    netEarnings: number;
+    bookingCount: number;
+    bookings: IBooking[];
+  }> {
+    return this.bookingRepository.getMonthlyEarnings(year, month);
+  }
 }
