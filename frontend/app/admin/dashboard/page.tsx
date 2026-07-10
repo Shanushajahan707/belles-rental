@@ -342,31 +342,37 @@ export default function AdminDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h3 className="text-lg font-bold text-gray-800">Monthly Earnings</h3>
             <div className="flex items-center gap-2">
-              <select
-                value={selectedMonth.getFullYear()}
-                onChange={(e) => setSelectedMonth(new Date(parseInt(e.target.value), selectedMonth.getMonth(), 1))}
-                className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
-              >
-                {Array.from({ length: 10 }, (_, i) => {
-                  const year = new Date().getFullYear() - 5 + i;
-                  return (
-                    <option key={year} value={year}>
-                      {year}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Year:</label>
+                <select
+                  value={selectedMonth.getFullYear().toString()}
+                  onChange={(e) => setSelectedMonth(new Date(parseInt(e.target.value), selectedMonth.getMonth(), 1))}
+                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                >
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const year = new Date().getFullYear() - 5 + i;
+                    return (
+                      <option key={year} value={year.toString()}>
+                        {year}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Month:</label>
+                <select
+                  value={selectedMonth.getMonth().toString()}
+                  onChange={(e) => setSelectedMonth(new Date(selectedMonth.getFullYear(), parseInt(e.target.value), 1))}
+                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                >
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i} value={i.toString()}>
+                      {new Date(0, i).toLocaleString('default', { month: 'short' })}
                     </option>
-                  );
-                })}
-              </select>
-              <select
-                value={selectedMonth.getMonth()}
-                onChange={(e) => setSelectedMonth(new Date(selectedMonth.getFullYear(), parseInt(e.target.value), 1))}
-                className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {new Date(0, i).toLocaleString('default', { month: 'short' })}
-                  </option>
-                ))}
-              </select>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
