@@ -674,7 +674,9 @@ export class BookingService {
     totalRentDiscount: number;
     totalSecurityDiscount: number;
     netEarnings: number;
-    bookingCount: number;
+    totalBookings: number;
+    completedBookings: number;
+    pendingBookings: number;
     bookings: IBooking[];
   }> {
     return this.bookingRepository.getMonthlyEarnings(year, month);
