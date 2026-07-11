@@ -146,11 +146,6 @@ export class BookingRepository {
       startDate: { $gte: monthStart, $lte: monthEnd }
     }).populate('items.itemId');
 
-    const completedBookings = await Booking.find({
-      startDate: { $gte: monthStart, $lte: monthEnd },
-      status: 'completed'
-    }).populate('items.itemId');
-
     const completedBookings = allBookings.filter(b => b.status === 'completed');
     const pendingBookings = allBookings.filter(b => ['booked', 'running'].includes(b.status));
 
@@ -160,8 +155,8 @@ export class BookingRepository {
     let totalSecurityDiscount = 0;
 
     completedBookings.forEach(booking => {
-      const bookingRent = booking.items.reduce((sum, item) => sum + (item.rentPrice || 0), 0);
-      const bookingSecurity = booking.items.reduce((sum, item) => sum + (item.security || 0), 0);
+      const bookingRent = booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0);
+      const bookingSecurity = booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0);
       
       totalRent += bookingRent;
       totalSecurity += bookingSecurity;
