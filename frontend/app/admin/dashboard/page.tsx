@@ -503,7 +503,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-800">{item.itemName}</p>
-                      <p className="text-sm text-gray-500">{item.itemCode}</p>
+                      <p className="text-sm text-gray-500">Code: {item.itemCode}</p>
                     </div>
                   </div>
                   <div className="text-right">
