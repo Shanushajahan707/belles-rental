@@ -681,4 +681,12 @@ export class BookingService {
   }> {
     return this.bookingRepository.getMonthlyEarnings(year, month);
   }
+
+  async getMostBookedItems(year: number, month: number): Promise<{
+    itemName: string;
+    itemCode: string;
+    bookingCount: number;
+  }[]> {
+    return this.bookingRepository.getMostBookedItems(year, month);
+  }
 }
