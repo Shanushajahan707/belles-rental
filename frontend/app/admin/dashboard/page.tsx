@@ -349,7 +349,7 @@ export default function AdminDashboard() {
                 <select
                   value={selectedMonth.getFullYear().toString()}
                   onChange={(e) => setSelectedMonth(new Date(parseInt(e.target.value), selectedMonth.getMonth(), 1))}
-                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white text-black"
                 >
                   {Array.from({ length: 10 }, (_, i) => {
                     const year = new Date().getFullYear() - 5 + i;
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
                 <select
                   value={selectedMonth.getMonth().toString()}
                   onChange={(e) => setSelectedMonth(new Date(selectedMonth.getFullYear(), parseInt(e.target.value), 1))}
-                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white text-black"
                 >
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i} value={i.toString()}>
@@ -427,41 +427,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-
-              {monthlyEarnings.totalBookings > 0 && (
-                <div>
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">Bookings this month</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {monthlyEarnings.bookings.map((booking) => (
-                      <div key={booking._id} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-semibold text-gray-800">{booking.bookingNumber}</p>
-                            <p className="text-sm text-gray-600">{booking.customerName}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {new Date(booking.startDate).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium text-gray-700">
-                              Rent: ₹{booking.items.reduce((sum: number, item: any) => sum + item.rentPrice, 0).toLocaleString()}
-                            </p>
-                            {booking.rentDiscount > 0 && (
-                              <p className="text-xs text-orange-600">
-                                Discount: -₹{booking.rentDiscount.toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="text-center py-8">
