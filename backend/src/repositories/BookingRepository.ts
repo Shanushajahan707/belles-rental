@@ -151,6 +151,9 @@ export class BookingRepository {
       status: 'completed'
     }).populate('items.itemId');
 
+    const completedBookings = allBookings.filter(b => b.status === 'completed');
+    const pendingBookings = allBookings.filter(b => ['booked', 'running'].includes(b.status));
+
     let totalRent = 0;
     let totalSecurity = 0;
     let totalRentDiscount = 0;

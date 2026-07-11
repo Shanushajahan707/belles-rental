@@ -26,7 +26,9 @@ interface MonthlyEarnings {
   totalRentDiscount: number;
   totalSecurityDiscount: number;
   netEarnings: number;
-  bookingCount: number;
+  totalBookings: number;
+  completedBookings: number;
+  pendingBookings: number;
   bookings: any[];
 }
 
@@ -373,6 +375,9 @@ export default function AdminDashboard() {
                   ))}
                 </select>
               </div>
+              <span className="text-sm text-black font-medium">
+                ({selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' })})
+              </span>
             </div>
           </div>
 
@@ -405,7 +410,15 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-purple-600 font-medium">Total Bookings</p>
-                    <p className="text-3xl font-bold text-purple-800">{monthlyEarnings.bookingCount}</p>
+                    <p className="text-3xl font-bold text-purple-800">{monthlyEarnings.totalBookings}</p>
+                    <div className="flex gap-4 mt-2">
+                      <div>
+                        <p className="text-xs text-green-600">Completed: {monthlyEarnings.completedBookings}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-orange-600">Pending: {monthlyEarnings.pendingBookings}</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Earnings Calculation:</p>
@@ -415,7 +428,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {monthlyEarnings.bookingCount > 0 && (
+              {monthlyEarnings.totalBookings > 0 && (
                 <div>
                   <h4 className="text-md font-semibold text-gray-700 mb-3">Bookings this month</h4>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
