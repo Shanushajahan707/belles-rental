@@ -146,6 +146,11 @@ export class BookingRepository {
       startDate: { $gte: monthStart, $lte: monthEnd }
     }).populate('items.itemId');
 
+    const completedBookings = await Booking.find({
+      startDate: { $gte: monthStart, $lte: monthEnd },
+      status: 'completed'
+    }).populate('items.itemId');
+
     const completedBookings = allBookings.filter(b => b.status === 'completed');
     const pendingBookings = allBookings.filter(b => ['booked', 'running'].includes(b.status));
 
@@ -174,7 +179,7 @@ export class BookingRepository {
       netEarnings,
       totalBookings: allBookings.length,
       completedBookings: completedBookings.length,
-      pendingBookings: pendingBookings.length,
+      pendingBookings: allBookings.length - completedBookings.length,
       bookings: allBookings
     };
   }
