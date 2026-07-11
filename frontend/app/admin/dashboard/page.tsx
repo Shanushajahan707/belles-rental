@@ -471,7 +471,7 @@ export default function AdminDashboard() {
               <div className="text-xl">Loading most booked items...</div>
             </div>
           ) : mostBookedItems.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-80 overflow-y-auto">
               {mostBookedItems.map((item, index) => (
                 <div
                   key={item.itemCode}
