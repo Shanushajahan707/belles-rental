@@ -222,8 +222,8 @@ export class BookingRepository {
 
     const sortedItems = Array.from(itemCounts.values())
       .sort((a, b) => b.count - a.count)
+      .filter(item => item._id && item.itemName && item.itemCode) // Filter out items without valid _id, name, or code
       .slice(0, 5)
-      .filter(item => item._id) // Filter out items without valid _id
       .map(item => ({
         _id: item._id,
         itemName: item.itemName,
