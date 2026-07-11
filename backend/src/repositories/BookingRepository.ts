@@ -180,6 +180,7 @@ export class BookingRepository {
   }
 
   async getMostBookedItems(year: number, month: number): Promise<{
+    _id: string;
     itemName: string;
     itemCode: string;
     bookingCount: number;
@@ -189,9 +190,9 @@ export class BookingRepository {
 
     const allBookings = await Booking.find({
       startDate: { $gte: monthStart, $lte: monthEnd }
-    });
+    }).populate('items.itemId');
 
-    const itemCounts = new Map<string, { itemName: string; itemCode: string; count: number }>();
+    const itemCounts = new Map<string, { _id: string; itemName: string; itemCode: string; count: number }>();
 
     allBookings.forEach(booking => {
       booking.items.forEach((item: any) => {
@@ -200,6 +201,7 @@ export class BookingRepository {
           itemCounts.get(key)!.count += 1;
         } else {
           itemCounts.set(key, {
+            _id: item.itemId?._id?.toString() || item.itemId?.toString(),
             itemName: item.itemName,
             itemCode: item.itemCode,
             count: 1
@@ -210,8 +212,9 @@ export class BookingRepository {
 
     const sortedItems = Array.from(itemCounts.values())
       .sort((a, b) => b.count - a.count)
-      .slice(0, 10)
+      .slice(0, 5)
       .map(item => ({
+        _id: item._id,
         itemName: item.itemName,
         itemCode: item.itemCode,
         bookingCount: item.count
