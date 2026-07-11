@@ -200,8 +200,18 @@ export class BookingRepository {
         if (itemCounts.has(key)) {
           itemCounts.get(key)!.count += 1;
         } else {
+          // Extract _id from populated itemId
+          let itemId: string;
+          if (item.itemId && typeof item.itemId === 'object' && item.itemId._id) {
+            itemId = item.itemId._id.toString();
+          } else if (item.itemId && typeof item.itemId === 'string') {
+            itemId = item.itemId;
+          } else {
+            itemId = '';
+          }
+
           itemCounts.set(key, {
-            _id: item.itemId?._id?.toString() || item.itemId?.toString(),
+            _id: itemId,
             itemName: item.itemName,
             itemCode: item.itemCode,
             count: 1
@@ -213,6 +223,7 @@ export class BookingRepository {
     const sortedItems = Array.from(itemCounts.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
+      .filter(item => item._id) // Filter out items without valid _id
       .map(item => ({
         _id: item._id,
         itemName: item.itemName,
@@ -220,6 +231,7 @@ export class BookingRepository {
         bookingCount: item.count
       }));
 
+    console.log('Most booked items:', sortedItems);
     return sortedItems;
   }
 }
