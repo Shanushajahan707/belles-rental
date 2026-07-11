@@ -222,5 +222,22 @@ export class BookingController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async getMostBookedItems(req: Request, res: Response): Promise<void> {
+    try {
+      const { year, month } = req.query;
+      if (!year || !month) {
+        res.status(400).json({ error: 'Year and month are required' });
+        return;
+      }
+      const items = await this.bookingService.getMostBookedItems(
+        parseInt(year as string),
+        parseInt(month as string)
+      );
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 

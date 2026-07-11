@@ -178,4 +178,45 @@ export class BookingRepository {
       bookings: allBookings
     };
   }
+
+  async getMostBookedItems(year: number, month: number): Promise<{
+    itemName: string;
+    itemCode: string;
+    bookingCount: number;
+  }[]> {
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const allBookings = await Booking.find({
+      startDate: { $gte: monthStart, $lte: monthEnd }
+    });
+
+    const itemCounts = new Map<string, { itemName: string; itemCode: string; count: number }>();
+
+    allBookings.forEach(booking => {
+      booking.items.forEach((item: any) => {
+        const key = item.itemCode;
+        if (itemCounts.has(key)) {
+          itemCounts.get(key)!.count += 1;
+        } else {
+          itemCounts.set(key, {
+            itemName: item.itemName,
+            itemCode: item.itemCode,
+            count: 1
+          });
+        }
+      });
+    });
+
+    const sortedItems = Array.from(itemCounts.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+      .map(item => ({
+        itemName: item.itemName,
+        itemCode: item.itemCode,
+        bookingCount: item.count
+      }));
+
+    return sortedItems;
+  }
 }
