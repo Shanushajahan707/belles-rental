@@ -33,6 +33,7 @@ interface MonthlyEarnings {
 }
 
 interface MostBookedItem {
+  _id: string;
   itemName: string;
   itemCode: string;
   bookingCount: number;
@@ -471,18 +472,19 @@ export default function AdminDashboard() {
               <div className="text-xl">Loading most booked items...</div>
             </div>
           ) : mostBookedItems.length > 0 ? (
-            <div className="space-y-3 max-h-80 overflow-y-auto">
+            <div className="space-y-3">
               {mostBookedItems.map((item, index) => (
-                <div
+                <Link
                   key={item.itemCode}
-                  className={`flex items-center justify-between p-4 rounded-xl border ${
+                  href={`/admin/items/${item._id}`}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 hover:shadow-lg cursor-pointer ${
                     index === 0
-                      ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200'
+                      ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 hover:from-yellow-100 hover:to-amber-100'
                       : index === 1
-                      ? 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200'
+                      ? 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200 hover:from-gray-100 hover:to-slate-100'
                       : index === 2
-                      ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200'
-                      : 'bg-white border-gray-100'
+                      ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200 hover:from-orange-100 hover:to-amber-100'
+                      : 'bg-white border-gray-100 hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -508,7 +510,7 @@ export default function AdminDashboard() {
                     <p className="text-2xl font-bold text-purple-600">{item.bookingCount}</p>
                     <p className="text-xs text-gray-500">bookings</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

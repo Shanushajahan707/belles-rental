@@ -683,6 +683,7 @@ export class BookingService {
   }
 
   async getMostBookedItems(year: number, month: number): Promise<{
+    _id: string;
     itemName: string;
     itemCode: string;
     bookingCount: number;
