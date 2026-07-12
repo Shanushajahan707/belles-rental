@@ -32,6 +32,13 @@ interface MonthlyEarnings {
   bookings: any[];
 }
 
+interface MostBookedItem {
+  _id: string;
+  itemName: string;
+  itemCode: string;
+  bookingCount: number;
+}
+
 interface TodayBooking {
   _id: string;
   customerName: string;
@@ -56,6 +63,9 @@ export default function AdminDashboard() {
   const [loadingMonthlyEarnings, setLoadingMonthlyEarnings] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
+  const [mostBookedItems, setMostBookedItems] = useState<MostBookedItem[]>([]);
+  const [loadingMostBookedItems, setLoadingMostBookedItems] = useState(false);
+
   useEffect(() => {
     checkAuth();
     fetchStats();
@@ -65,6 +75,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchMonthlyEarnings();
+    fetchMostBookedItems();
   }, [selectedMonth]);
   const fetchTodayBookings = async () => {
     try {
@@ -127,6 +138,24 @@ export default function AdminDashboard() {
       });
     } finally {
       setLoadingMonthlyEarnings(false);
+    }
+  };
+
+  const fetchMostBookedItems = async () => {
+    try {
+      setLoadingMostBookedItems(true);
+      const year = selectedMonth.getFullYear();
+      const month = selectedMonth.getMonth() + 1;
+      const response = await api.get(`/bookings/most-booked-items?year=${year}&month=${month}`);
+      setMostBookedItems(response.data);
+    } catch (error) {
+      console.error('Error fetching most booked items:', error);
+      toast.addToast({
+        message: 'Failed to load most booked items',
+        type: 'error',
+      });
+    } finally {
+      setLoadingMostBookedItems(false);
     }
   };
 
@@ -349,7 +378,7 @@ export default function AdminDashboard() {
                 <select
                   value={selectedMonth.getFullYear().toString()}
                   onChange={(e) => setSelectedMonth(new Date(parseInt(e.target.value), selectedMonth.getMonth(), 1))}
-                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black text-sm bg-white"
+                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white text-black"
                 >
                   {Array.from({ length: 10 }, (_, i) => {
                     const year = new Date().getFullYear() - 5 + i;
@@ -366,7 +395,7 @@ export default function AdminDashboard() {
                 <select
                   value={selectedMonth.getMonth().toString()}
                   onChange={(e) => setSelectedMonth(new Date(selectedMonth.getFullYear(), parseInt(e.target.value), 1))}
-                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black text-sm bg-white"
+                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white text-black"
                 >
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i} value={i.toString()}>
@@ -427,11 +456,66 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-
             </div>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">No earnings data for this month</p>
+            </div>
+          )}
+        </div>
+
+        {/* Most Booked Items Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-white/50 mb-8">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Most Booked Items of the Month</h3>
+          {loadingMostBookedItems ? (
+            <div className="text-center py-8">
+              <div className="text-xl">Loading most booked items...</div>
+            </div>
+          ) : mostBookedItems.length > 0 ? (
+            <div className="space-y-3">
+              {mostBookedItems.map((item, index) => (
+                <Link
+                  key={item.itemCode}
+                  href={`/admin/items/${item._id}`}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 hover:shadow-lg cursor-pointer ${
+                    index === 0
+                      ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 hover:from-yellow-100 hover:to-amber-100'
+                      : index === 1
+                      ? 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200 hover:from-gray-100 hover:to-slate-100'
+                      : index === 2
+                      ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200 hover:from-orange-100 hover:to-amber-100'
+                      : 'bg-white border-gray-100 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+                        index === 0
+                          ? 'bg-yellow-400 text-white'
+                          : index === 1
+                          ? 'bg-gray-400 text-white'
+                          : index === 2
+                          ? 'bg-orange-400 text-white'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800">{item.itemName}</p>
+                      <p className="text-sm text-gray-500">Code: {item.itemCode}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-purple-600">{item.bookingCount}</p>
+                    <p className="text-xs text-gray-500">bookings</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No booking data for this month</p>
             </div>
           )}
         </div>

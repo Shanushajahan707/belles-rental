@@ -134,25 +134,29 @@ export class BookingRepository {
     totalRentDiscount: number;
     totalSecurityDiscount: number;
     netEarnings: number;
-    bookingCount: number;
+    totalBookings: number;
+    completedBookings: number;
+    pendingBookings: number;
     bookings: IBooking[];
   }> {
     const monthStart = new Date(year, month - 1, 1);
     const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
 
-    const bookings = await Booking.find({
-      startDate: { $gte: monthStart, $lte: monthEnd },
-      status: 'completed'
+    const allBookings = await Booking.find({
+      startDate: { $gte: monthStart, $lte: monthEnd }
     }).populate('items.itemId');
+
+    const completedBookings = allBookings.filter(b => b.status === 'completed');
+    const pendingBookings = allBookings.filter(b => ['booked', 'running'].includes(b.status));
 
     let totalRent = 0;
     let totalSecurity = 0;
     let totalRentDiscount = 0;
     let totalSecurityDiscount = 0;
 
-    bookings.forEach(booking => {
-      const bookingRent = booking.items.reduce((sum, item) => sum + (item.rentPrice || 0), 0);
-      const bookingSecurity = booking.items.reduce((sum, item) => sum + (item.security || 0), 0);
+    completedBookings.forEach(booking => {
+      const bookingRent = booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0);
+      const bookingSecurity = booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0);
       
       totalRent += bookingRent;
       totalSecurity += bookingSecurity;
@@ -168,8 +172,66 @@ export class BookingRepository {
       totalRentDiscount,
       totalSecurityDiscount,
       netEarnings,
-      bookingCount: bookings.length,
-      bookings
+      totalBookings: allBookings.length,
+      completedBookings: completedBookings.length,
+      pendingBookings: allBookings.length - completedBookings.length,
+      bookings: allBookings
     };
+  }
+
+  async getMostBookedItems(year: number, month: number): Promise<{
+    _id: string;
+    itemName: string;
+    itemCode: string;
+    bookingCount: number;
+  }[]> {
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const allBookings = await Booking.find({
+      startDate: { $gte: monthStart, $lte: monthEnd }
+    }).populate('items.itemId');
+
+    const itemCounts = new Map<string, { _id: string; itemName: string; itemCode: string; count: number }>();
+
+    allBookings.forEach(booking => {
+      booking.items.forEach((item: any) => {
+        const key = item.itemCode;
+        if (itemCounts.has(key)) {
+          itemCounts.get(key)!.count += 1;
+        } else {
+          // Extract _id from populated itemId
+          let itemId: string;
+          if (item.itemId && typeof item.itemId === 'object' && item.itemId._id) {
+            itemId = item.itemId._id.toString();
+          } else if (item.itemId && typeof item.itemId === 'string') {
+            itemId = item.itemId;
+          } else {
+            itemId = '';
+          }
+
+          itemCounts.set(key, {
+            _id: itemId,
+            itemName: item.itemName,
+            itemCode: item.itemCode,
+            count: 1
+          });
+        }
+      });
+    });
+
+    const sortedItems = Array.from(itemCounts.values())
+      .sort((a, b) => b.count - a.count)
+      .filter(item => item._id && item.itemName && item.itemCode) // Filter out items without valid _id, name, or code
+      .slice(0, 5)
+      .map(item => ({
+        _id: item._id,
+        itemName: item.itemName,
+        itemCode: item.itemCode,
+        bookingCount: item.count
+      }));
+
+    console.log('Most booked items:', sortedItems);
+    return sortedItems;
   }
 }

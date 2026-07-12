@@ -674,9 +674,20 @@ export class BookingService {
     totalRentDiscount: number;
     totalSecurityDiscount: number;
     netEarnings: number;
-    bookingCount: number;
+    totalBookings: number;
+    completedBookings: number;
+    pendingBookings: number;
     bookings: IBooking[];
   }> {
     return this.bookingRepository.getMonthlyEarnings(year, month);
+  }
+
+  async getMostBookedItems(year: number, month: number): Promise<{
+    _id: string;
+    itemName: string;
+    itemCode: string;
+    bookingCount: number;
+  }[]> {
+    return this.bookingRepository.getMostBookedItems(year, month);
   }
 }
