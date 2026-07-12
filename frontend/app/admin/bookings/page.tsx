@@ -458,6 +458,7 @@ export default function BookingsManagement() {
               <table className="w-full min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nos</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking #</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
@@ -473,12 +474,16 @@ export default function BookingsManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredBookings.map(booking => (
+                  {filteredBookings.map((booking,index) => (
                     <tr 
                       key={booking._id} 
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => handleViewDetails(booking)}
                     >
+                      
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-red-600">{index+1}</p>
+                      </td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900">{booking.bookingNumber}</p>
                       </td>

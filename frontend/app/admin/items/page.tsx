@@ -328,6 +328,8 @@ export default function ItemsManagement() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">#</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Code</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Barcode</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
@@ -342,8 +344,9 @@ export default function ItemsManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredItems.map(item => (
+                {filteredItems.map((item ,index) => (
                   <tr key={item._id} className="hover:bg-gray-50 cursor-pointer">
+                    <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm font-medium text-gray-900">{index + 1}</td>
                     <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm font-medium text-gray-900">{item.itemCode}</td>
                     <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">{item.barcode}</td>
                     <td onClick={() => router.push(`/admin/items/${item._id}`)} className="px-6 py-5 text-sm text-gray-700">{item.name}</td>
