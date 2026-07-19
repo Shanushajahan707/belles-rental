@@ -330,7 +330,7 @@ export default function BookingsManagement() {
                     <p className="font-medium text-gray-700">Items:</p>
                     {booking.items.map((item: any, index: number) => (
                       <div key={index} className="text-gray-600">
-                        • {item.itemName || item.itemId?.name || 'Unknown Item'}
+                        • {item.itemId?.itemCode || item.itemCode || 'Unknown'} - {item.itemName || item.itemId?.name || 'Unknown Item'}
                         {item.priceType && (
                           <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded ${item.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                             }`}>
@@ -462,8 +462,7 @@ export default function BookingsManagement() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking #</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items Code</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items (Code - Name)</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
@@ -501,17 +500,10 @@ export default function BookingsManagement() {
                       <td className="px-4 py-3">
                         <div className="text-sm text-gray-700">
                           {booking.items.map((item: any, index: number) => (
-                            <div key={index}>
-                              {item.itemId?.itemCode || item.itemCode || 'Unknown Item'}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-700">
-                          {booking.items.map((item: any, index: number) => (
                             <div key={index} className="flex items-center gap-2">
-                              {item.itemName || item.itemId?.name || 'Unknown Item'}
+                              <span className="font-medium text-gray-900">{item.itemId?.itemCode || item.itemCode || 'Unknown'}</span>
+                              <span className="text-gray-600">-</span>
+                              <span>{item.itemName || item.itemId?.name || 'Unknown Item'}</span>
                               {item.priceType && (
                                 <span className={`px-2 py-0.5 text-xs font-medium rounded ${item.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                                   }`}>
