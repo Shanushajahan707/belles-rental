@@ -120,9 +120,7 @@ export default function NewBookingPage() {
   const filteredItems = useMemo(() =>
     items.filter(
       item =>
-
-      (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.itemCode.toLowerCase().includes(searchQuery.toLowerCase()))
+      item.itemCode.toLowerCase() === searchQuery.toLowerCase()
     ), [items, searchQuery]
   );
 
@@ -324,7 +322,7 @@ export default function NewBookingPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name or item code..."
+                  placeholder="Search by item code..."
                   className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                 />
               </div>
