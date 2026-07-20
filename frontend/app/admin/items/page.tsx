@@ -281,7 +281,7 @@ export default function ItemsManagement() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by code, name, or barcode"
+              placeholder="Search by item code"
               className="w-full min-w-[200px] rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
             />
           </div>

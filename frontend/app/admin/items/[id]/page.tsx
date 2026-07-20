@@ -331,27 +331,27 @@ export default function ItemDetailPage() {
                           <div>
                             <span className="text-xs text-gray-500 block">Start Date</span>
                             <p className="font-medium text-gray-800 text-sm">
-                              {new Date(booking.startDate).toLocaleDateString()}
+                              {new Date(booking.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                             </p>
                           </div>
                           <div>
                             <span className="text-xs text-gray-500 block">Return Date</span>
                             <p className="font-medium text-gray-800 text-sm">
-                              {new Date(booking.returnDate).toLocaleDateString()}
+                              {new Date(booking.returnDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                             </p>
                           </div>
                           {booking.actualReturnDate && (
                             <div>
                               <span className="text-xs text-gray-500 block">Actual Return</span>
                               <p className="font-medium text-gray-800 text-sm">
-                                {new Date(booking.actualReturnDate).toLocaleDateString()}
+                                {new Date(booking.actualReturnDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </p>
                             </div>
                           )}
                           <div>
                             <span className="text-xs text-gray-500 block">Booking Date</span>
                             <p className="font-medium text-gray-800 text-sm">
-                              {new Date(booking.createdAt).toLocaleDateString()}
+                              {new Date(booking.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                             </p>
                           </div>
                         </div>
