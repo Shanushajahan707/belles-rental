@@ -13,12 +13,13 @@ interface RentalItem {
   itemCode: string;
   name: string;
   category: string;
+  image: string;
   rentPrice: number;
   halfRentPrice: number;
   securityDeposit: number;
   halfSecurityDeposit: number;
   supportsHalfPricing: boolean;
-  status: 'available' | 'booked' | 'running';
+  status: 'available' | 'booked' | 'running' | 'sold_out';
 }
 
 interface BookingItem {
@@ -117,10 +118,21 @@ export default function NewBookingPage() {
     setSelectedItems(selectedItems.filter(si => si.itemId !== itemId));
   };
 
+  const getImageUrl = (img: string) => {
+    if (!img) return '';
+
+    if (img.includes('drive.google.com')) {
+      const id = img.split('/file/d/')[1]?.split('/')[0];
+      return `https://drive.google.com/uc?export=view&id=${id}`;
+    }
+
+    return img;
+  };
+
   const filteredItems = useMemo(() =>
     items.filter(
       item =>
-      item.itemCode.toLowerCase() === searchQuery.toLowerCase()
+      !searchQuery || item.itemCode.toLowerCase() === searchQuery.toLowerCase()
     ), [items, searchQuery]
   );
 
@@ -335,14 +347,42 @@ export default function NewBookingPage() {
                 ) : (
                   filteredItems.map(item => {
                     const isAdded = selectedItems.some(si => si.itemId === item._id);
+                    const isSoldOut = item.status === 'sold_out';
                     return (
                       <div
                         key={item._id}
-                        className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        className={`p-3 rounded-lg transition-colors ${isSoldOut ? 'bg-red-50 border border-red-200' : 'bg-gray-50 hover:bg-gray-100'}`}
                       >
-                        <div className="mb-2">
-                          <p className="font-medium text-gray-800">{item.name}</p>
-                          <p className="text-sm text-gray-600">Item Code: {item.itemCode}</p>
+                        <div className="flex gap-3 mb-2">
+                          <div className="w-16 h-16 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden">
+                            {item.image ? (
+                              <img
+                                src={getImageUrl(item.image)}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = 'https://via.placeholder.com/64x64.png?text=No+Image';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
+                                💎
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-800 truncate">{item.name}</p>
+                                <p className="text-sm text-gray-600">Item Code: {item.itemCode}</p>
+                              </div>
+                              {isSoldOut && (
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 flex-shrink-0">
+                                  Sold Out
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>
@@ -358,26 +398,32 @@ export default function NewBookingPage() {
                             </div>
                           )}
                         </div>
-                        <div className="flex gap-2 mt-3">
-                          <button
-                            type="button"
-                            onClick={() => addItemToBooking(item, 'full')}
-                            disabled={isAdded}
-                            className="flex-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                          >
-                            Add Full
-                          </button>
-                          {item.supportsHalfPricing && (
+                        {isSoldOut ? (
+                          <div className="mt-3 p-2 bg-red-100 rounded text-xs text-red-700 text-center">
+                            This item is sold out and cannot be booked
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 mt-3">
                             <button
                               type="button"
-                              onClick={() => addItemToBooking(item, 'half')}
+                              onClick={() => addItemToBooking(item, 'full')}
                               disabled={isAdded}
-                              className="flex-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                              className="flex-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                             >
-                              Add Half
+                              Add Full
                             </button>
-                          )}
-                        </div>
+                            {item.supportsHalfPricing && (
+                              <button
+                                type="button"
+                                onClick={() => addItemToBooking(item, 'half')}
+                                disabled={isAdded}
+                                className="flex-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                              >
+                                Add Half
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })

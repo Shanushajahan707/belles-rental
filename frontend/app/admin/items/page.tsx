@@ -21,7 +21,7 @@ interface RentalItem {
   halfSecurityDeposit: number;
   purchasePrice: number;
   supportsHalfPricing: boolean;
-  status: 'available' | 'booked' | 'running';
+  status: 'available' | 'booked' | 'running' | 'sold_out';
 }
 
 const categories = [
@@ -53,7 +53,7 @@ export default function ItemsManagement() {
   const [items, setItems] = useState<RentalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'booked' | 'running'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'booked' | 'running' | 'sold_out'>('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingItem, setEditingItem] = useState<RentalItem | null>(null);
@@ -69,7 +69,7 @@ export default function ItemsManagement() {
     barcode: '',
     purchasePrice: '',
     supportsHalfPricing: false,
-    status: 'available' as 'available' | 'booked' | 'running',
+    status: 'available' as 'available' | 'booked' | 'running' | 'sold_out',
   });
 
   useEffect(() => {
@@ -187,7 +187,7 @@ export default function ItemsManagement() {
         barcode: '',
         purchasePrice: '',
         supportsHalfPricing: false,
-        status: 'available',
+        status: 'available' as 'available' | 'booked' | 'running' | 'sold_out',
       });
     } catch (error: any) {
       console.error('Error saving item:', error);
@@ -206,6 +206,8 @@ export default function ItemsManagement() {
         return 'bg-yellow-100 text-yellow-800';
       case 'running':
         return 'bg-blue-100 text-blue-800';
+      case 'sold_out':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -264,6 +266,7 @@ export default function ItemsManagement() {
               <option value="available">Available</option>
               <option value="booked">Booked</option>
               <option value="running">Running</option>
+              <option value="sold_out">Sold Out</option>
             </select>
             <label htmlFor="itemCategoryFilter" className="text-sm font-medium text-gray-700">Category</label>
             <select
@@ -312,7 +315,7 @@ export default function ItemsManagement() {
                 barcode: '',
                 purchasePrice: '',
                 supportsHalfPricing: false,
-                status: 'available',
+                status: 'available' as 'available' | 'booked' | 'running' | 'sold_out',
               });
               setShowModal(true);
             }}
@@ -565,6 +568,20 @@ export default function ItemsManagement() {
                   />
                   <span className="text-sm font-medium text-gray-700">This item supports half pricing</span>
                 </label>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as 'available' | 'booked' | 'running' | 'sold_out' })}
+                  className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                >
+                  <option value="available">Available</option>
+                  <option value="booked">Booked</option>
+                  <option value="running">Running</option>
+                  <option value="sold_out">Sold Out</option>
+                </select>
               </div>
 
               <div className="flex gap-4 pt-4">

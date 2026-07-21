@@ -18,7 +18,7 @@ interface RentalItem {
   securityDeposit: number;
   halfSecurityDeposit: number;
   supportsHalfPricing: boolean;
-  status: 'available' | 'booked' | 'running';
+  status: 'available' | 'booked' | 'running' | 'sold_out';
 }
 
 interface BookingInfo {
@@ -169,6 +169,8 @@ export default function RentalsPage() {
         return 'bg-yellow-100 text-yellow-800';
       case 'running':
         return 'bg-blue-100 text-blue-800';
+      case 'sold_out':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -298,6 +300,7 @@ export default function RentalsPage() {
                 <option value="Available">Available</option>
                 <option value="Booked">Booked</option>
                 <option value="Running">Running</option>
+                <option value="Sold_out">Sold Out</option>
               </select>
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,7 +346,8 @@ export default function RentalsPage() {
                     {item.status === 'available' && <CheckCircle className="w-3 h-3" />}
                     {item.status === 'booked' && <Clock className="w-3 h-3" />}
                     {item.status === 'running' && <XCircle className="w-3 h-3" />}
-                    {item.status}
+                    {item.status === 'sold_out' && <XCircle className="w-3 h-3" />}
+                    {item.status === 'sold_out' ? 'Sold Out' : item.status}
                   </span>
                 </div>
 
@@ -394,6 +398,14 @@ export default function RentalsPage() {
                           <p><span className="font-semibold">Return By:</span> {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
                         </div>
                       )}
+                    </div>
+                  )}
+                  {item.status === 'sold_out' && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-xs sm:text-sm text-red-800 font-medium flex items-center gap-2">
+                        <span className="text-red-600">🚫</span>
+                        This item has been sold out and is no longer available for rental
+                      </p>
                     </div>
                   )}
                 </div>

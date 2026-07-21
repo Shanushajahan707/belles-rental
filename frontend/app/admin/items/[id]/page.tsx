@@ -19,7 +19,7 @@ interface RentalItem {
   rentPrice: number;
   securityDeposit: number;
   purchasePrice: number;
-  status: 'available' | 'booked' | 'running';
+  status: 'available' | 'booked' | 'running' | 'sold_out';
 }
 
 interface Booking {
@@ -163,6 +163,8 @@ export default function ItemDetailPage() {
         return 'bg-yellow-100 text-yellow-800';
       case 'running':
         return 'bg-blue-100 text-blue-800';
+      case 'sold_out':
+        return 'bg-red-100 text-red-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'overdue':

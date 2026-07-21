@@ -40,7 +40,7 @@ export class RentalItemService {
     return this.rentalItemRepository.delete(id);
   }
 
-  async updateItemStatus(id: string, status: 'available' | 'booked' | 'running'): Promise<IRentalItem | null> {
+  async updateItemStatus(id: string, status: 'available' | 'booked' | 'running' | 'sold_out'): Promise<IRentalItem | null> {
     return this.rentalItemRepository.updateStatus(id, status);
   }
 

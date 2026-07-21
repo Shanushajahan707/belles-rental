@@ -96,6 +96,11 @@ export class BookingService {
         throw new Error(`Item with ID ${item.itemId} not found`);
       }
 
+      // Check if item is sold out
+      if (rentalItem.status === 'sold_out') {
+        throw new Error(`Item ${rentalItem.itemCode} is sold out and cannot be booked`);
+      }
+
       // Check for date overlaps with existing bookings
       const existingBookings = await this.bookingRepository.findByItemId(item.itemId);
       for (const existingBooking of existingBookings) {
@@ -307,6 +312,11 @@ export class BookingService {
         const rentalItem = await this.rentalItemRepository.findById(item.itemId.toString());
         if (!rentalItem) {
           throw new Error(`Item with ID ${item.itemId} not found`);
+        }
+
+        // Check if item is sold out
+        if (rentalItem.status === 'sold_out') {
+          throw new Error(`Item ${rentalItem.itemCode} is sold out and cannot be booked`);
         }
 
         // Check for date overlaps with existing bookings (excluding current booking)

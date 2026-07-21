@@ -13,7 +13,7 @@ export interface IRentalItem extends Document {
   purchasePrice: number;
   oldEarnings: number;
   supportsHalfPricing: boolean;
-  status: 'available' | 'booked' | 'running';
+  status: 'available' | 'booked' | 'running' | 'sold_out';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -83,7 +83,7 @@ const RentalItemSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['available', 'booked', 'running'],
+      enum: ['available', 'booked', 'running', 'sold_out'],
       default: 'available',
     },
   },
