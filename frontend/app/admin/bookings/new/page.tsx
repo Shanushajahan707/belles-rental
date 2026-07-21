@@ -123,7 +123,7 @@ export default function NewBookingPage() {
 
     if (img.includes('drive.google.com')) {
       const id = img.split('/file/d/')[1]?.split('/')[0];
-      return `https://drive.google.com/uc?export=view&id=${id}`;
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w200`;
     }
 
     return img;

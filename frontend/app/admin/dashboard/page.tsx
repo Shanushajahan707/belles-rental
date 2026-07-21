@@ -223,7 +223,7 @@ export default function AdminDashboard() {
 
       {showTodayBookingAlert && (
         <div className="max-w-7xl mx-auto px-4 pt-6">
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6 mb-8 shadow-lg shadow-orange-200/50">
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6 mb-6 shadow-lg shadow-orange-200/50">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-100 rounded-xl">
@@ -279,6 +279,61 @@ export default function AdminDashboard() {
                     <div className="text-right">
                       <span className="px-3 py-1 bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 rounded-full text-sm font-semibold shadow-sm">
                         Not Arrived
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {stats.overdue > 0 && (
+        <div className="max-w-7xl mx-auto px-4 pb-6">
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-2xl p-6 mb-6 shadow-lg shadow-red-200/50">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-xl">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-red-800">Overdue Returns ({stats.overdueBookings.filter(b =>
+                  b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
+                  b.phone.includes(searchOverdue)
+                ).length})</h3>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search by name or phone..."
+                  value={searchOverdue}
+                  onChange={(e) => setSearchOverdue(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-red-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm w-full sm:w-64"
+                />
+              </div>
+            </div>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {stats.overdueBookings.filter(b =>
+                b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
+                b.phone.includes(searchOverdue)
+              ).map((booking) => (
+                <div key={booking._id} className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-gray-800">{booking.customerName}</p>
+                      <p className="text-sm text-gray-600">{booking.phone}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Due: {new Date(booking.returnDate).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="px-3 py-1 bg-gradient-to-r from-red-100 to-rose-100 text-red-800 rounded-full text-sm font-semibold shadow-sm">
+                        Overdue
                       </span>
                     </div>
                   </div>
@@ -519,59 +574,6 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-
-        {stats.overdue > 0 && (
-          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-2xl p-6 mb-8 shadow-lg shadow-red-200/50">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-xl">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="text-xl font-bold text-red-800">Overdue Returns ({stats.overdueBookings.filter(b =>
-                  b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
-                  b.phone.includes(searchOverdue)
-                ).length})</h3>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search by name or phone..."
-                  value={searchOverdue}
-                  onChange={(e) => setSearchOverdue(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-red-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm w-full sm:w-64"
-                />
-              </div>
-            </div>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {stats.overdueBookings.filter(b =>
-                b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
-                b.phone.includes(searchOverdue)
-              ).map((booking) => (
-                <div key={booking._id} className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-800">{booking.customerName}</p>
-                      <p className="text-sm text-gray-600">{booking.phone}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Due: {new Date(booking.returnDate).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-gradient-to-r from-red-100 to-rose-100 text-red-800 rounded-full text-sm font-semibold shadow-sm">
-                        Overdue
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {stats.dueToday > 0 && (
           <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6 mb-8 shadow-lg shadow-yellow-200/50">
