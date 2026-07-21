@@ -32,6 +32,8 @@ interface Booking {
   returnDate: string;
   actualReturnDate?: string;
   discount: number;
+  rentDiscount: number;
+  securityDiscount: number;
   totalAmount: number;
   status: 'booked' | 'running' | 'completed' | 'overdue';
   createdAt: string;
@@ -87,8 +89,16 @@ export default function ItemDetailPage() {
       // Find this specific item in the booking
       const bookingItem = booking.items?.find((bi: any) => bi.itemId === itemId || bi.itemId?._id === itemId);
       if (bookingItem && (booking.status === 'completed' || booking.status === 'running' || booking.status === 'overdue')) {
-        // Add only this item's rent price
-        return total + (bookingItem.rentPrice || 0);
+        // Count total items in the booking
+        const totalItemsInBooking = booking.items?.length || 0;
+
+        // Divide booking discount equally among all items
+        const rentDiscountPerItem = totalItemsInBooking > 0 ? (booking.rentDiscount || 0) / totalItemsInBooking : 0;
+
+        // Calculate net earnings for this item (rent price - equal share of discount)
+        const netEarnings = (bookingItem.rentPrice || 0) - rentDiscountPerItem;
+
+        return total + netEarnings;
       }
       return total;
     }, 0);
@@ -110,7 +120,7 @@ export default function ItemDetailPage() {
         ? 'Net loss since purchase'
         : 'Break-even since purchase';
 
-  const profitDisplay = Math.abs(profitAmount).toLocaleString();
+  const profitDisplay = Math.abs(profitAmount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   useEffect(() => {
     checkAuth();
@@ -278,7 +288,7 @@ export default function ItemDetailPage() {
                   <div className="text-xs text-gray-600 mt-1">Overdue</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-3 border border-purple-100">
-                  <div className="text-2xl font-bold text-purple-600">₹{itemEarnings || 0 + (item?.oldEarnings || 0)}</div>
+                  <div className="text-2xl font-bold text-purple-600">₹{((itemEarnings || 0) + (item?.oldEarnings || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
                   <div className="text-xs text-gray-600 mt-1">Item Earnings</div>
                 </div>
                 <div className={`bg-white rounded-lg shadow-sm p-3 border-2 ${profitAmount >= 0 ? 'border-green-200' : 'border-red-200'}`}>
@@ -369,6 +379,46 @@ export default function ItemDetailPage() {
                             <div>
                               <span className="text-xs text-gray-600 block">Price Type</span>
                               <p className="font-semibold text-gray-800">{bookingItem.priceType === 'half' ? 'Half' : 'Full'}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Booking-level pricing with discounts */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="space-y-1">
+                            <span className="text-xs text-gray-600 block">Total Rent (Booking)</span>
+                            <p className="font-semibold text-gray-800">₹{booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0).toLocaleString()}</p>
+                            {booking.rentDiscount > 0 && (
+                              <>
+                                <p className="text-xs text-red-600">-₹{booking.rentDiscount?.toLocaleString()} discount</p>
+                                <p className="font-semibold text-green-700">Net: ₹{(booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0) - booking.rentDiscount).toLocaleString()}</p>
+                              </>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-xs text-gray-600 block">Total Security (Booking)</span>
+                            <p className="font-semibold text-gray-800">₹{booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0).toLocaleString()}</p>
+                            {booking.securityDiscount > 0 && (
+                              <>
+                                <p className="text-xs text-red-600">-₹{booking.securityDiscount?.toLocaleString()} discount</p>
+                                <p className="font-semibold text-green-700">Net: ₹{(booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0) - booking.securityDiscount).toLocaleString()}</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Item-specific discount allocation */}
+                        {bookingItem && (booking.rentDiscount > 0 || booking.securityDiscount > 0) && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div className="space-y-1">
+                              <span className="text-xs text-gray-600 block">This Item's Rent Discount Share</span>
+                              <p className="font-semibold text-orange-600">-₹{((booking.rentDiscount || 0) / (booking.items?.length || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
+                              <p className="text-xs text-gray-500">({booking.rentDiscount || 0} ÷ {booking.items?.length || 1} items)</p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs text-gray-600 block">This Item's Net Earnings</span>
+                              <p className="font-semibold text-green-700">₹{((bookingItem.rentPrice || 0) - ((booking.rentDiscount || 0) / (booking.items?.length || 0))).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
+                              <p className="text-xs text-gray-500">({bookingItem.rentPrice || 0} - discount share)</p>
                             </div>
                           </div>
                         )}
