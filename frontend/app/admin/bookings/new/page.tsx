@@ -132,7 +132,7 @@ export default function NewBookingPage() {
   const filteredItems = useMemo(() =>
     items.filter(
       item =>
-      !searchQuery || item.itemCode.toLowerCase() === searchQuery.toLowerCase()
+      !searchQuery || item.itemCode.toLowerCase().includes(searchQuery.toLowerCase())
     ), [items, searchQuery]
   );
 

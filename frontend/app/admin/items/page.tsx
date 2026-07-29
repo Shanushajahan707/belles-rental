@@ -219,9 +219,7 @@ export default function ItemsManagement() {
     const search = searchQuery.trim().toLowerCase();
     const matchesSearch =
       !search ||
-      item.name.toLowerCase().includes(search) ||
-      item.itemCode.toLowerCase().includes(search) ||
-      item.barcode.toLowerCase().includes(search);
+      item.itemCode.toLowerCase().includes(search);
 
     return matchesStatus && matchesCategory && matchesSearch;
   }).sort((a, b) => {
