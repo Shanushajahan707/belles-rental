@@ -423,12 +423,14 @@ export default function RentalsPage() {
                   {(() => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    const futureBookings = bookingInfo[item._id]?.filter(booking => {
+                    const activeRunningBooking = bookingInfo[item._id]?.find(booking => {
+                      const startDate = new Date(booking.startDate);
+                      startDate.setHours(0, 0, 0, 0);
                       const returnDate = new Date(booking.returnDate);
                       returnDate.setHours(0, 0, 0, 0);
-                      return returnDate >= today && booking.status === 'running';
-                    }) || [];
-                    if (item.status !== 'running' || !futureBookings.length) return null;
+                      return booking.status === 'running' && startDate <= today && returnDate >= today;
+                    });
+                    if (item.status !== 'running' || !activeRunningBooking) return null;
                     return (
                       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                         <p className="text-xs sm:text-sm text-blue-800 font-medium flex items-center gap-2 mb-2">
@@ -436,17 +438,15 @@ export default function RentalsPage() {
                           Currently Running
                         </p>
                         <div className="text-xs text-blue-700 space-y-2">
-                          {futureBookings.map((booking, index) => (
-                          <div key={booking.bookingNumber} className="border-t border-blue-200 pt-2 first:border-t-0 first:pt-0">
-                            <p><span className="font-semibold">Return By:</span> {formatBookingDate(booking.returnDate)}</p>
+                          <div key={activeRunningBooking.bookingNumber} className="border-t border-blue-200 pt-2 first:border-t-0 first:pt-0">
+                            <p><span className="font-semibold">Return By:</span> {formatBookingDate(activeRunningBooking.returnDate)}</p>
                             <p className="text-blue-600 mt-1">
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${booking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                {booking.priceType === 'half' ? 'Half Price' : 'Full Price'}
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${activeRunningBooking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {activeRunningBooking.priceType === 'half' ? 'Half Price' : 'Full Price'}
                               </span>
                             </p>
                           </div>
-                        ))}
-                      </div>
+                        </div>
                       </div>
                     );
                   })()}
