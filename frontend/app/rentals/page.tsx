@@ -391,7 +391,13 @@ export default function RentalsPage() {
 
                   </div>
                   {(() => {
-                    const futureBookings = bookingInfo[item._id]?.filter(booking => new Date(booking.returnDate) >= new Date()) || [];
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const futureBookings = bookingInfo[item._id]?.filter(booking => {
+                      const returnDate = new Date(booking.returnDate);
+                      returnDate.setHours(0, 0, 0, 0);
+                      return returnDate >= today && booking.status === 'booked';
+                    }) || [];
                     if (item.status !== 'booked' || !futureBookings.length) return null;
                     return (
                       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
@@ -415,7 +421,13 @@ export default function RentalsPage() {
                     );
                   })()}
                   {(() => {
-                    const futureBookings = bookingInfo[item._id]?.filter(booking => new Date(booking.returnDate) >= new Date()) || [];
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const futureBookings = bookingInfo[item._id]?.filter(booking => {
+                      const returnDate = new Date(booking.returnDate);
+                      returnDate.setHours(0, 0, 0, 0);
+                      return returnDate >= today && booking.status === 'running';
+                    }) || [];
                     if (item.status !== 'running' || !futureBookings.length) return null;
                     return (
                       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
