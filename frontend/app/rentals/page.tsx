@@ -27,6 +27,7 @@ interface BookingInfo {
   startDate: string;
   returnDate: string;
   status: string;
+  priceType?: 'full' | 'half';
 }
 
 const categories = [
@@ -56,7 +57,7 @@ const categories = [
 export default function RentalsPage() {
   const [items, setItems] = useState<RentalItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<RentalItem[]>([]);
-  const [bookingInfo, setBookingInfo] = useState<{ [itemId: string]: BookingInfo }>({});
+  const [bookingInfo, setBookingInfo] = useState<{ [itemId: string]: BookingInfo[] }>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -94,7 +95,7 @@ export default function RentalsPage() {
       setItems(data);
 
       // Fetch booking info for booked/running items
-      const bookings: { [itemId: string]: BookingInfo } = {};
+      const bookings: { [itemId: string]: BookingInfo[] } = {};
       for (const item of data) {
         if (item.status === 'booked' || item.status === 'running') {
           try {
@@ -106,16 +107,16 @@ export default function RentalsPage() {
             const bookingData = await bookingRes.json();
             const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
             if (bookingArray.length > 0) {
-              const activeBooking = bookingArray[0]; // Get first booking
-              bookings[item._id] = {
-                bookingNumber: activeBooking.bookingNumber,
-                customerName: activeBooking.customerName,
-                startDate: activeBooking.startDate,
-                returnDate: activeBooking.returnDate,
-                status: activeBooking.status,
-              };
+              // Store all bookings for this item
+              bookings[item._id] = bookingArray.map((booking: any) => ({
+                bookingNumber: booking.bookingNumber,
+                customerName: booking.customerName,
+                startDate: booking.startDate,
+                returnDate: booking.returnDate,
+                status: booking.status,
+                priceType: booking.items?.[0]?.priceType || 'full',
+              }));
             }
-            // console.log(`Fetched booking for item ${item._id}:`, bookings[item._id],bookingData);
           } catch (bookingError) {
             console.error(`Error fetching booking for item ${item._id}:`, bookingError);
           }
@@ -153,8 +154,9 @@ export default function RentalsPage() {
     }
 
     if (searchQuery) {
+      const search = searchQuery.trim().toLowerCase();
       filtered = filtered.filter(item =>
-        item.itemCode.toLowerCase() === searchQuery.toLowerCase()
+        item.itemCode.toLowerCase().includes(search)
       );
     }
 
@@ -378,26 +380,44 @@ export default function RentalsPage() {
                     )}
 
                   </div>
-                  {item.status === 'booked' && (
+                  {item.status === 'booked' && bookingInfo[item._id] && bookingInfo[item._id].length > 0 && (
                     <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                       <p className="text-xs sm:text-sm text-yellow-800 font-medium flex items-center gap-2 mb-2">
                         <span className="text-yellow-600">⚠️</span>
-                        Currently Booked
+                        {bookingInfo[item._id].length > 1 ? `Upcoming Bookings (${bookingInfo[item._id].length})` : 'Currently Booked'}
                       </p>
-                      {bookingInfo[item._id] && (
-                        <div className="text-xs text-yellow-700 space-y-1">
-                          <p><span className="font-semibold">Booked:</span> {formatBookingDate(bookingInfo[item._id]?.startDate)} to {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
-                        </div>
-                      )}
+                      <div className="text-xs text-yellow-700 space-y-2">
+                        {bookingInfo[item._id].map((booking, index) => (
+                          <div key={booking.bookingNumber} className="border-t border-yellow-200 pt-2 first:border-t-0 first:pt-0">
+                            <p><span className="font-semibold">{index + 1}.</span> {formatBookingDate(booking.startDate)} to {formatBookingDate(booking.returnDate)}</p>
+                            <p className="text-yellow-600 mt-1">
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${booking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {booking.priceType === 'half' ? 'Half Price' : 'Full Price'}
+                              </span>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {item.status === 'running' && (
+                  {item.status === 'running' && bookingInfo[item._id] && bookingInfo[item._id].length > 0 && (
                     <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                      {bookingInfo[item._id] && (
-                        <div className="text-xs text-blue-700 space-y-1">
-                          <p><span className="font-semibold">Return By:</span> {formatBookingDate(bookingInfo[item._id]?.returnDate)}</p>
-                        </div>
-                      )}
+                      <p className="text-xs sm:text-sm text-blue-800 font-medium flex items-center gap-2 mb-2">
+                        <span className="text-blue-600">🔄</span>
+                        Currently Running
+                      </p>
+                      <div className="text-xs text-blue-700 space-y-2">
+                        {bookingInfo[item._id].map((booking, index) => (
+                          <div key={booking.bookingNumber} className="border-t border-blue-200 pt-2 first:border-t-0 first:pt-0">
+                            <p><span className="font-semibold">Return By:</span> {formatBookingDate(booking.returnDate)}</p>
+                            <p className="text-blue-600 mt-1">
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${booking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {booking.priceType === 'half' ? 'Half Price' : 'Full Price'}
+                              </span>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {item.status === 'sold_out' && (
