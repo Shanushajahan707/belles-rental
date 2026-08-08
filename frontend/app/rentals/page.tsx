@@ -94,34 +94,44 @@ export default function RentalsPage() {
       const data = await response.json();
       setItems(data);
 
-      // Fetch booking info for booked/running items
-      const bookings: { [itemId: string]: BookingInfo[] } = {};
-      for (const item of data) {
-        if (item.status === 'booked' || item.status === 'running') {
-          try {
-            const bookingRes = await fetch(`${API_URL}/bookings/public/item/${item._id}`);
-            if (!bookingRes.ok) {
-              console.error(`Booking fetch failed for item ${item._id}:`, bookingRes.status);
-              continue;
-            }
-            const bookingData = await bookingRes.json();
-            const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
-            if (bookingArray.length > 0) {
-              // Store all bookings for this item
-              bookings[item._id] = bookingArray.map((booking: any) => ({
+      // Fetch booking info for booked/running items in parallel
+      const bookedItems = data.filter((item: RentalItem) => item.status === 'booked' || item.status === 'running');
+      const bookingPromises = bookedItems.map(async (item: RentalItem) => {
+        try {
+          const bookingRes = await fetch(`${API_URL}/bookings/public/item/${item._id}`);
+          if (!bookingRes.ok) {
+            console.error(`Booking fetch failed for item ${item._id}:`, bookingRes.status);
+            return null;
+          }
+          const bookingData = await bookingRes.json();
+          const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
+          if (bookingArray.length > 0) {
+            return {
+              itemId: item._id,
+              bookings: bookingArray.map((booking: any) => ({
                 bookingNumber: booking.bookingNumber,
                 customerName: booking.customerName,
                 startDate: booking.startDate,
                 returnDate: booking.returnDate,
                 status: booking.status,
                 priceType: booking.items?.[0]?.priceType || 'full',
-              }));
-            }
-          } catch (bookingError) {
-            console.error(`Error fetching booking for item ${item._id}:`, bookingError);
+              }))
+            };
           }
+          return null;
+        } catch (bookingError) {
+          console.error(`Error fetching booking for item ${item._id}:`, bookingError);
+          return null;
         }
-      }
+      });
+
+      const bookingResults = await Promise.all(bookingPromises);
+      const bookings: { [itemId: string]: BookingInfo[] } = {};
+      bookingResults.forEach(result => {
+        if (result) {
+          bookings[result.itemId] = result.bookings;
+        }
+      });
       setBookingInfo(bookings);
     } catch (fetchError: any) {
       console.error('Error fetching items:', fetchError);
@@ -380,14 +390,17 @@ export default function RentalsPage() {
                     )}
 
                   </div>
-                  {item.status === 'booked' && bookingInfo[item._id] && bookingInfo[item._id].length > 0 && (
-                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-                      <p className="text-xs sm:text-sm text-yellow-800 font-medium flex items-center gap-2 mb-2">
-                        <span className="text-yellow-600">⚠️</span>
-                        {bookingInfo[item._id].length > 1 ? `Upcoming Bookings (${bookingInfo[item._id].length})` : 'Currently Booked'}
-                      </p>
-                      <div className="text-xs text-yellow-700 space-y-2">
-                        {bookingInfo[item._id].map((booking, index) => (
+                  {(() => {
+                    const futureBookings = bookingInfo[item._id]?.filter(booking => new Date(booking.returnDate) >= new Date()) || [];
+                    if (item.status !== 'booked' || !futureBookings.length) return null;
+                    return (
+                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+                        <p className="text-xs sm:text-sm text-yellow-800 font-medium flex items-center gap-2 mb-2">
+                          <span className="text-yellow-600">⚠️</span>
+                          {futureBookings.length > 1 ? `Upcoming Bookings (${futureBookings.length})` : 'Currently Booked'}
+                        </p>
+                        <div className="text-xs text-yellow-700 space-y-2">
+                          {futureBookings.map((booking, index) => (
                           <div key={booking.bookingNumber} className="border-t border-yellow-200 pt-2 first:border-t-0 first:pt-0">
                             <p><span className="font-semibold">{index + 1}.</span> {formatBookingDate(booking.startDate)} to {formatBookingDate(booking.returnDate)}</p>
                             <p className="text-yellow-600 mt-1">
@@ -398,16 +411,20 @@ export default function RentalsPage() {
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
-                  {item.status === 'running' && bookingInfo[item._id] && bookingInfo[item._id].length > 0 && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                      <p className="text-xs sm:text-sm text-blue-800 font-medium flex items-center gap-2 mb-2">
-                        <span className="text-blue-600">🔄</span>
-                        Currently Running
-                      </p>
-                      <div className="text-xs text-blue-700 space-y-2">
-                        {bookingInfo[item._id].map((booking, index) => (
+                      </div>
+                    );
+                  })()}
+                  {(() => {
+                    const futureBookings = bookingInfo[item._id]?.filter(booking => new Date(booking.returnDate) >= new Date()) || [];
+                    if (item.status !== 'running' || !futureBookings.length) return null;
+                    return (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                        <p className="text-xs sm:text-sm text-blue-800 font-medium flex items-center gap-2 mb-2">
+                          <span className="text-blue-600">🔄</span>
+                          Currently Running
+                        </p>
+                        <div className="text-xs text-blue-700 space-y-2">
+                          {futureBookings.map((booking, index) => (
                           <div key={booking.bookingNumber} className="border-t border-blue-200 pt-2 first:border-t-0 first:pt-0">
                             <p><span className="font-semibold">Return By:</span> {formatBookingDate(booking.returnDate)}</p>
                             <p className="text-blue-600 mt-1">
@@ -418,8 +435,9 @@ export default function RentalsPage() {
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })()}
                   {item.status === 'sold_out' && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                       <p className="text-xs sm:text-sm text-red-800 font-medium flex items-center gap-2">
