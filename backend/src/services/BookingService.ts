@@ -700,4 +700,175 @@ export class BookingService {
   }[]> {
     return this.bookingRepository.getMostBookedItems(year, month);
   }
+
+  async checkItemAvailability(itemCode: string, startDate: Date, endDate: Date): Promise<{
+    available: boolean;
+    item: {
+      _id: string;
+      itemCode: string;
+      name: string;
+      supportsHalfPricing: boolean;
+      status: string;
+    };
+    availabilityDetails: {
+      fullAvailable: boolean;
+      halfAvailable: boolean;
+      availableUnits: number;
+      totalUnits: number;
+      conflictingBookings: Array<{
+        bookingNumber: string;
+        customerName: string;
+        startDate: string;
+        endDate: string;
+        priceType: string;
+      }>;
+    };
+    message: string;
+  }> {
+    // Find item by code
+    const item = await this.rentalItemRepository.findByItemCode(itemCode);
+    if (!item) {
+      return {
+        available: false,
+        item: null as any,
+        availabilityDetails: {
+          fullAvailable: false,
+          halfAvailable: false,
+          availableUnits: 0,
+          totalUnits: 2,
+          conflictingBookings: []
+        },
+        message: `Item with code ${itemCode} not found`
+      };
+    }
+
+    // Check if item is sold out
+    if (item.status === 'sold_out') {
+      return {
+        available: false,
+        item: {
+          _id: item._id.toString(),
+          itemCode: item.itemCode,
+          name: item.name,
+          supportsHalfPricing: item.supportsHalfPricing,
+          status: item.status
+        },
+        availabilityDetails: {
+          fullAvailable: false,
+          halfAvailable: false,
+          availableUnits: 0,
+          totalUnits: item.supportsHalfPricing ? 2 : 1,
+          conflictingBookings: []
+        },
+        message: `Item ${itemCode} is sold out and cannot be booked`
+      };
+    }
+
+    // Normalize dates
+    const newStart = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+    const newEnd = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
+
+    // Get existing bookings for this item
+    const existingBookings = await this.bookingRepository.findByItemId(item._id.toString());
+    
+    // Filter active bookings that overlap with the requested dates
+    const overlappingBookings = existingBookings.filter(booking => {
+      if (booking.status !== 'booked' && booking.status !== 'running') return false;
+
+      const bookingStart = new Date(Date.UTC(
+        new Date(booking.startDate).getFullYear(),
+        new Date(booking.startDate).getMonth(),
+        new Date(booking.startDate).getDate()
+      ));
+      const bookingEnd = new Date(Date.UTC(
+        new Date(booking.returnDate).getFullYear(),
+        new Date(booking.returnDate).getMonth(),
+        new Date(booking.returnDate).getDate()
+      ));
+
+      return newStart < bookingEnd && newEnd > bookingStart;
+    });
+
+    // Calculate total units booked during the overlapping period
+    let totalUnitsBooked = 0;
+    const conflictingBookings: Array<{
+      bookingNumber: string;
+      customerName: string;
+      startDate: string;
+      endDate: string;
+      priceType: string;
+    }> = [];
+
+    for (const booking of overlappingBookings) {
+      const bookingItem = booking.items.find((i: any) =>
+        (i.itemId?.toString() === item._id.toString()) ||
+        (i.itemId?._id?.toString() === item._id.toString())
+      );
+
+      if (bookingItem) {
+        const priceType = bookingItem?.priceType || 'full';
+        const units = priceType === 'full' ? 2 : 1;
+        totalUnitsBooked += units;
+        
+        conflictingBookings.push({
+          bookingNumber: booking.bookingNumber,
+          customerName: booking.customerName,
+          startDate: booking.startDate.toISOString().split('T')[0],
+          endDate: booking.returnDate.toISOString().split('T')[0],
+          priceType: priceType
+        });
+      }
+    }
+
+    // Determine availability based on item type
+    const totalUnits = item.supportsHalfPricing ? 2 : 1;
+    const availableUnits = totalUnits - totalUnitsBooked;
+    
+    let fullAvailable = false;
+    let halfAvailable = false;
+    let message = '';
+
+    if (item.supportsHalfPricing) {
+      // Item supports half pricing
+      fullAvailable = availableUnits >= 2;
+      halfAvailable = availableUnits >= 1;
+
+      if (fullAvailable) {
+        message = `Item ${itemCode} is available for both full and half booking from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`;
+      } else if (halfAvailable) {
+        message = `Item ${itemCode} is available for half booking only from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}. The other part is already booked.`;
+      } else {
+        message = `Item ${itemCode} is not available from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}. Both parts are already booked.`;
+      }
+    } else {
+      // Item doesn't support half pricing
+      fullAvailable = availableUnits >= 1;
+      halfAvailable = false;
+
+      if (fullAvailable) {
+        message = `Item ${itemCode} is available for full booking from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`;
+      } else {
+        message = `Item ${itemCode} is not available from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}. It is already booked.`;
+      }
+    }
+
+    return {
+      available: fullAvailable || halfAvailable,
+      item: {
+        _id: item._id.toString(),
+        itemCode: item.itemCode,
+        name: item.name,
+        supportsHalfPricing: item.supportsHalfPricing,
+        status: item.status
+      },
+      availabilityDetails: {
+        fullAvailable,
+        halfAvailable,
+        availableUnits,
+        totalUnits,
+        conflictingBookings
+      },
+      message
+    };
+  }
 }

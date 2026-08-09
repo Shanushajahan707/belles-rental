@@ -239,5 +239,26 @@ export class BookingController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async checkItemAvailability(req: Request, res: Response): Promise<void> {
+    try {
+      const { itemCode, startDate, endDate } = req.query;
+      
+      if (!itemCode || !startDate || !endDate) {
+        res.status(400).json({ error: 'Item code, start date, and end date are required' });
+        return;
+      }
+
+      const availability = await this.bookingService.checkItemAvailability(
+        itemCode as string,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+      
+      res.json(availability);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
