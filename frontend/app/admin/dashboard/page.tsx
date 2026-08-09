@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { DollarSign, ShoppingBag, Clock, AlertTriangle, LogOut, Package, Calendar, Users, FileText, Search } from 'lucide-react';
+import { DollarSign, ShoppingBag, Clock, AlertTriangle, LogOut, Package, Calendar, Users, FileText, Search, CheckCircle, XCircle, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useToast } from '@/components/Toast';
 import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
@@ -65,6 +65,16 @@ export default function AdminDashboard() {
 
   const [mostBookedItems, setMostBookedItems] = useState<MostBookedItem[]>([]);
   const [loadingMostBookedItems, setLoadingMostBookedItems] = useState(false);
+
+  // Availability checker state
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [availabilityCheck, setAvailabilityCheck] = useState({
+    itemCode: '',
+    startDate: '',
+    endDate: ''
+  });
+  const [availabilityResult, setAvailabilityResult] = useState<any>(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -165,6 +175,39 @@ export default function AdminDashboard() {
     router.push('/admin/login');
   };
 
+  const handleCheckAvailability = async () => {
+    if (!availabilityCheck.itemCode || !availabilityCheck.startDate || !availabilityCheck.endDate) {
+      toast.addToast({
+        message: 'Please fill in all fields',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      setCheckingAvailability(true);
+      setAvailabilityResult(null);
+      
+      const response = await api.get('/bookings/check-availability', {
+        params: {
+          itemCode: availabilityCheck.itemCode,
+          startDate: availabilityCheck.startDate,
+          endDate: availabilityCheck.endDate
+        }
+      });
+      
+      setAvailabilityResult(response.data);
+    } catch (error: any) {
+      console.error('Error checking availability:', error);
+      toast.addToast({
+        message: error.response?.data?.error || 'Failed to check availability',
+        type: 'error',
+      });
+    } finally {
+      setCheckingAvailability(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -191,6 +234,13 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <button
+                onClick={() => setShowAvailabilityModal(true)}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300 transform hover:scale-105 text-sm font-medium"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Check Availability</span>
+              </button>
               <Link href="/admin/invoices" className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 transform hover:scale-105 text-sm font-medium">
                 <FileText className="w-4 h-4 inline" />
                 <span className="hidden sm:inline ml-1">Manage Invoices</span>
@@ -638,6 +688,158 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Availability Check Modal */}
+      {showAvailabilityModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Check Item Availability</h2>
+                <button
+                  onClick={() => {
+                    setShowAvailabilityModal(false);
+                    setAvailabilityResult(null);
+                    setAvailabilityCheck({ itemCode: '', startDate: '', endDate: '' });
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <XCircle className="w-6 h-6 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Code</label>
+                  <input
+                    type="text"
+                    value={availabilityCheck.itemCode}
+                    onChange={(e) => setAvailabilityCheck({ ...availabilityCheck, itemCode: e.target.value.toUpperCase() })}
+                    placeholder="Enter item code (e.g., NECK001)"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    value={availabilityCheck.startDate}
+                    onChange={(e) => setAvailabilityCheck({ ...availabilityCheck, startDate: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <input
+                    type="date"
+                    value={availabilityCheck.endDate}
+                    onChange={(e) => setAvailabilityCheck({ ...availabilityCheck, endDate: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-black"
+                  />
+                </div>
+
+                <button
+                  onClick={handleCheckAvailability}
+                  disabled={checkingAvailability}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300 transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {checkingAvailability ? 'Checking...' : 'Check Availability'}
+                </button>
+              </div>
+
+              {availabilityResult && (
+                <div className="mt-6 space-y-4">
+                  {availabilityResult.available ? (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                        <h3 className="font-bold text-green-800">Available!</h3>
+                      </div>
+                      <p className="text-green-700 text-sm">{availabilityResult.message}</p>
+                      
+                      {availabilityResult.item && (
+                        <div className="mt-3 p-3 bg-white rounded-lg">
+                          <p className="font-medium text-gray-800">{availabilityResult.item.name}</p>
+                          <p className="text-sm text-gray-600">Code: {availabilityResult.item.itemCode}</p>
+                          {availabilityResult.item.supportsHalfPricing && (
+                            <div className="mt-2 flex items-center gap-2 text-sm">
+                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">Half Pricing Supported</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                        <div className={`p-2 rounded-lg ${availabilityResult.availabilityDetails.fullAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <p className="font-medium">Full Booking</p>
+                          <p className="text-xs">{availabilityResult.availabilityDetails.fullAvailable ? 'Available' : 'Not Available'}</p>
+                        </div>
+                        <div className={`p-2 rounded-lg ${availabilityResult.availabilityDetails.halfAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <p className="font-medium">Half Booking</p>
+                          <p className="text-xs">{availabilityResult.availabilityDetails.halfAvailable ? 'Available' : 'Not Available'}</p>
+                        </div>
+                      </div>
+
+                      {availabilityResult.availabilityDetails.halfAvailable && !availabilityResult.availabilityDetails.fullAvailable && (
+                        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-amber-700">
+                              <span className="font-medium">Partial Availability:</span> Only one part of this item is available for booking. The other part is already booked for these dates.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <XCircle className="w-6 h-6 text-red-600" />
+                        <h3 className="font-bold text-red-800">Not Available</h3>
+                      </div>
+                      <p className="text-red-700 text-sm">{availabilityResult.message}</p>
+
+                      {availabilityResult.item && (
+                        <div className="mt-3 p-3 bg-white rounded-lg">
+                          <p className="font-medium text-gray-800">{availabilityResult.item.name}</p>
+                          <p className="text-sm text-gray-600">Code: {availabilityResult.item.itemCode}</p>
+                          <p className="text-sm text-gray-500 mt-1">Status: {availabilityResult.item.status}</p>
+                        </div>
+                      )}
+
+                      {availabilityResult.availabilityDetails.conflictingBookings.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Conflicting Bookings:</p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {availabilityResult.availabilityDetails.conflictingBookings.map((booking: any, index: number) => (
+                              <div key={index} className="p-2 bg-white rounded-lg text-xs">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <p className="font-medium text-gray-800">{booking.customerName}</p>
+                                    <p className="text-gray-600">{booking.bookingNumber}</p>
+                                  </div>
+                                  <span className={`px-2 py-1 rounded-full ${booking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                    {booking.priceType}
+                                  </span>
+                                </div>
+                                <p className="text-gray-500 mt-1">
+                                  {booking.startDate} to {booking.endDate}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Request, Response } from 'express';
 const router = Router();
 const bookingController = new BookingController();
 
+router.get('/check-availability', authenticate, (req: Request, res: Response) => bookingController.checkItemAvailability(req, res));
 router.get('/', (req: Request, res: Response) => bookingController.getAllBookings(req, res));
 router.get('/dashboard/stats', authenticate, (req: Request, res: Response) => bookingController.getDashboardStats(req, res));
 router.get('/fetchItems', authenticate, (req: Request, res: Response) => bookingController.getItems(req, res));
