@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { ArrowLeft, Download, FileText, Search, Plus, Filter, Eye } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
+import Pagination from '@/components/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Invoice {
   _id: string;
@@ -33,10 +35,14 @@ export default function InvoicesPage() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const toast = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   useEffect(() => {
     fetchInvoices();
-  }, []);
+  }, [currentPage, statusFilter, debouncedSearchQuery]);
 
   const fetchInvoices = async () => {
     try {
@@ -46,10 +52,22 @@ export default function InvoicesPage() {
         return;
       }
 
-      const response = await api.get('/invoices');
+      const params = new URLSearchParams();
+      params.append('page', currentPage.toString());
+      params.append('limit', itemsPerPage.toString());
+      
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      if (debouncedSearchQuery) {
+        params.append('search', debouncedSearchQuery);
+      }
+
+      const response = await api.get(`/invoices?${params.toString()}`);
       console.log('Invoices response:', response.data);
 
-      setInvoices(response.data);
+      setInvoices(response.data.invoices || response.data);
+      setTotalItems(response.data.total || response.data.length);
     } catch (error) {
       console.error('Error fetching invoices:', error);
       toast.addToast({
@@ -131,15 +149,18 @@ export default function InvoicesPage() {
     }
   };
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = invoice.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.customerPhone.includes(searchQuery) ||
-      invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredInvoices = invoices;
 
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    return matchesSearch && matchesStatus;
-  });
+  const handleFilterChange = (filterType: 'status' | 'search', value: string) => {
+    if (filterType === 'status') {
+      setStatusFilter(value);
+    } else if (filterType === 'search') {
+      setSearchQuery(value);
+    }
+    setCurrentPage(1);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -235,7 +256,7 @@ export default function InvoicesPage() {
                   type="text"
                   placeholder="Search by customer name, phone, or invoice number..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-black"
                 />
               </div>
@@ -244,7 +265,7 @@ export default function InvoicesPage() {
               <Filter className="w-4 h-4 text-gray-400" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-black"
               >
                 <option value="all">All Status</option>
@@ -335,6 +356,17 @@ export default function InvoicesPage() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {totalItems > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              showItemsInfo={true}
+            />
           )}
 
           {/* Invoice Details Modal */}

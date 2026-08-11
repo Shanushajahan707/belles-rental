@@ -41,4 +41,12 @@ export class RentalItemRepository {
   async updateStatus(id: string, status: string): Promise<IRentalItem | null> {
     return RentalItem.findByIdAndUpdate(id, { status }, { new: true });
   }
+
+  async findWithPagination(query: any, skip: number, limit: number): Promise<IRentalItem[]> {
+    return RentalItem.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
+  }
+
+  async countDocuments(query: any): Promise<number> {
+    return RentalItem.countDocuments(query);
+  }
 }

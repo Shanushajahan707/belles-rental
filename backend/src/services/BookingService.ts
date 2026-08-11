@@ -12,11 +12,38 @@ export class BookingService {
     this.rentalItemRepository = new RentalItemRepository();
   }
 
-  async getAllBookings(startDate?: Date, endDate?: Date): Promise<IBooking[]> {
-    if (startDate && endDate) {
-      return this.bookingRepository.findByDateRange(startDate, endDate);
+  async getAllBookings(startDate?: Date, endDate?: Date, page?: number, limit?: number, status?: string, search?: string): Promise<{ bookings: IBooking[]; total: number }> {
+    const pageNum = page || 1;
+    const limitNum = limit || 20;
+    const skip = (pageNum - 1) * limitNum;
+    
+    let query: any = {};
+    if (status && status !== 'all') {
+      query.status = status;
     }
-    return this.bookingRepository.findAll();
+    if (search) {
+      query.$or = [
+        { bookingNumber: { $regex: search, $options: 'i' } },
+        { customerName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { createdBy: { $regex: search, $options: 'i' } },
+      ];
+    }
+    
+    // Handle date range filtering
+    if (startDate && endDate) {
+      const normalizedStart = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+      const normalizedEnd = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999));
+      query.startDate = { $lte: normalizedEnd };
+      query.returnDate = { $gte: normalizedStart };
+    }
+    
+    const [bookings, total] = await Promise.all([
+      this.bookingRepository.findWithPagination(query, skip, limitNum),
+      this.bookingRepository.countDocuments(query)
+    ]);
+    
+    return { bookings, total };
   }
 
   async getBookingById(id: string): Promise<IBooking | null> {

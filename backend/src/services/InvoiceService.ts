@@ -145,9 +145,30 @@ export class InvoiceService {
     }
   }
 
-  async getAllInvoices(): Promise<IInvoice[]> {
+  async getAllInvoices(page?: number, limit?: number, status?: string, search?: string): Promise<{ invoices: IInvoice[]; total: number }> {
     try {
-      return await Invoice.find().sort({ createdAt: -1 }).populate('bookingId');
+      const pageNum = page || 1;
+      const limitNum = limit || 20;
+      const skip = (pageNum - 1) * limitNum;
+      
+      let query: any = {};
+      if (status && status !== 'all') {
+        query.status = status;
+      }
+      if (search) {
+        query.$or = [
+          { customerName: { $regex: search, $options: 'i' } },
+          { customerPhone: { $regex: search, $options: 'i' } },
+          { invoiceNumber: { $regex: search, $options: 'i' } },
+        ];
+      }
+      
+      const [invoices, total] = await Promise.all([
+        Invoice.find(query).sort({ createdAt: -1 }).populate('bookingId').skip(skip).limit(limitNum),
+        Invoice.countDocuments(query)
+      ]);
+      
+      return { invoices, total };
     } catch (error: any) {
       throw new Error(`Error fetching invoices: ${error.message}`);
     }

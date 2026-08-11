@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { Plus, Edit, Trash2, ArrowLeft, Eye } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
+import Pagination from '@/components/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface RentalItem {
   _id: string;
@@ -57,6 +59,10 @@ export default function ItemsManagement() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingItem, setEditingItem] = useState<RentalItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [formData, setFormData] = useState({
     itemCode: '',
     name: '',
@@ -75,7 +81,7 @@ export default function ItemsManagement() {
   useEffect(() => {
     checkAuth();
     fetchItems();
-  }, []);
+  }, [currentPage, filterStatus, filterCategory, debouncedSearchQuery]);
 
   const checkAuth = () => {
     const token = localStorage.getItem('token');
@@ -92,12 +98,27 @@ export default function ItemsManagement() {
         return;
       }
 
-      const response = await api.get('/items');
-      setItems(response.data);
+      const params = new URLSearchParams();
+      params.append('page', currentPage.toString());
+      params.append('limit', itemsPerPage.toString());
+      
+      if (filterStatus !== 'all') {
+        params.append('status', filterStatus);
+      }
+      if (filterCategory !== 'all') {
+        params.append('category', filterCategory);
+      }
+      if (debouncedSearchQuery) {
+        params.append('search', debouncedSearchQuery);
+      }
+
+      const response = await api.get(`/items?${params.toString()}`);
+      setItems(response.data.items || response.data);
+      setTotalItems(response.data.total || response.data.length);
     } catch (error) {
       console.error('Error fetching items:', error);
       toast.addToast({
-        message: 'Error deleting item',
+        message: 'Error fetching items',
         type: 'error',
       });
     } finally {
@@ -213,19 +234,23 @@ export default function ItemsManagement() {
     }
   };
 
-  const filteredItems = items.filter((item) => {
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
-    const search = searchQuery.trim().toLowerCase();
-    const matchesSearch =
-      !search ||
-      item.itemCode.toLowerCase().includes(search);
-
-    return matchesStatus && matchesCategory && matchesSearch;
-  }).sort((a, b) => {
+  const filteredItems = items.sort((a, b) => {
     // Sort by itemCode numerically/alphabetically
     return a.itemCode.localeCompare(b.itemCode, undefined, { numeric: true, sensitivity: 'base' });
   });
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handleFilterChange = (filterType: 'status' | 'category' | 'search', value: string) => {
+    if (filterType === 'status') {
+      setFilterStatus(value as typeof filterStatus);
+    } else if (filterType === 'category') {
+      setFilterCategory(value);
+    } else if (filterType === 'search') {
+      setSearchQuery(value);
+    }
+    setCurrentPage(1);
+  };
 
   if (loading) {
     return (
@@ -257,7 +282,7 @@ export default function ItemsManagement() {
             <select
               id="itemStatusFilter"
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
             >
               <option value="all">All</option>
@@ -270,7 +295,7 @@ export default function ItemsManagement() {
             <select
               id="itemCategoryFilter"
               value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
+              onChange={(e) => handleFilterChange('category', e.target.value)}
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
             >
               <option value="all">All Categories</option>
@@ -281,7 +306,7 @@ export default function ItemsManagement() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
               placeholder="Search by item code"
               className="w-full min-w-[200px] rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
             />
@@ -291,6 +316,7 @@ export default function ItemsManagement() {
               setFilterStatus('all');
               setFilterCategory('all');
               setSearchQuery('');
+              setCurrentPage(1);
             }}
             className="inline-flex items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
           >
@@ -404,6 +430,17 @@ export default function ItemsManagement() {
             )}
           </div>
         </div>
+
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            showItemsInfo={true}
+          />
+        )}
       </div>
 
       {showModal && (
