@@ -234,4 +234,22 @@ export class BookingRepository {
     console.log('Most booked items:', sortedItems);
     return sortedItems;
   }
+
+  async findWithPagination(query: any, skip: number, limit: number): Promise<IBooking[]> {
+    const bookings = await Booking.find(query).populate('items.itemId').sort({ createdAt: -1 }).skip(skip).limit(limit);
+    
+    // Sort by status: running first, then booked, then completed, then overdue
+    const statusOrder = { running: 0, booked: 1, completed: 2, overdue: 3 };
+    return bookings.sort((a, b) => {
+      const orderA = statusOrder[a.status as keyof typeof statusOrder] ?? 4;
+      const orderB = statusOrder[b.status as keyof typeof statusOrder] ?? 4;
+      if (orderA !== orderB) return orderA - orderB;
+      // If same status, sort by startDate
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+    });
+  }
+
+  async countDocuments(query: any): Promise<number> {
+    return Booking.countDocuments(query);
+  }
 }

@@ -6,6 +6,7 @@ import { Search, Filter, Gem, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { checkBackendHealth, getCachedBackendStatus } from '@/lib/backendHealth';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import Pagination from '@/components/Pagination';
 
 interface RentalItem {
   _id: string;
@@ -64,6 +65,8 @@ export default function RentalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   useEffect(() => {
     fetchItems();
@@ -71,6 +74,7 @@ export default function RentalsPage() {
 
   useEffect(() => {
     filterItems();
+    setCurrentPage(1);
   }, [items, searchQuery, selectedCategory, selectedStatus]);
 
   const fetchItems = async () => {
@@ -92,7 +96,7 @@ export default function RentalsPage() {
       }
 
       const data = await response.json();
-      const itemsArray = Array.isArray(data) ? data : [];
+      const itemsArray = Array.isArray(data) ? data : (data.items || []);
       setItems(itemsArray);
 
       // Fetch booking info for booked/running items in parallel
@@ -173,6 +177,13 @@ export default function RentalsPage() {
 
     setFilteredItems(filtered);
   };
+
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -327,7 +338,7 @@ export default function RentalsPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map(item => (
+          {paginatedItems.map(item => (
             <div
               key={item._id}
               className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 cursor-pointer"
@@ -484,6 +495,17 @@ export default function RentalsPage() {
               Clear Filters
             </button>
           </div>
+        )}
+
+        {filteredItems.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredItems.length}
+            showItemsInfo={true}
+          />
         )}
       </div>
 

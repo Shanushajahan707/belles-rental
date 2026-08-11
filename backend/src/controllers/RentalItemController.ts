@@ -10,10 +10,13 @@ export class RentalItemController {
 
   async getAllItems(req: Request, res: Response): Promise<void> {
     try {
-      const { category, status } = req.query;
+      const { category, status, page, limit, search } = req.query;
       const items = await this.rentalItemService.getAllItems({
         category: category as string,
         status: status as string,
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 20,
+        search: search as string,
       });
       res.json(items);
     } catch (error: any) {

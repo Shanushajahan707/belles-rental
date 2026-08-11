@@ -8,8 +8,28 @@ export class RentalItemService {
     this.rentalItemRepository = new RentalItemRepository();
   }
 
-  async getAllItems(filters?: { category?: string; status?: string }): Promise<IRentalItem[]> {
-    return this.rentalItemRepository.findAll(filters);
+  async getAllItems(filters?: { category?: string; status?: string; page?: number; limit?: number; search?: string }): Promise<{ items: IRentalItem[]; total: number }> {
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 20;
+    const skip = (page - 1) * limit;
+    
+    let query: any = {};
+    if (filters?.category && filters.category !== 'all') {
+      query.category = filters.category;
+    }
+    if (filters?.status && filters.status !== 'all') {
+      query.status = filters.status;
+    }
+    if (filters?.search) {
+      query.itemCode = { $regex: filters.search, $options: 'i' };
+    }
+    
+    const [items, total] = await Promise.all([
+      this.rentalItemRepository.findWithPagination(query, skip, limit),
+      this.rentalItemRepository.countDocuments(query)
+    ]);
+    
+    return { items, total };
   }
 
   async getItemById(id: string): Promise<IRentalItem | null> {
