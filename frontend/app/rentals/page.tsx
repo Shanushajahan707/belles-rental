@@ -92,10 +92,11 @@ export default function RentalsPage() {
       }
 
       const data = await response.json();
-      setItems(data);
+      const itemsArray = Array.isArray(data) ? data : [];
+      setItems(itemsArray);
 
       // Fetch booking info for booked/running items in parallel
-      const bookedItems = data.filter((item: RentalItem) => item.status === 'booked' || item.status === 'running');
+      const bookedItems = itemsArray.filter((item: RentalItem) => item.status === 'booked' || item.status === 'running');
       const bookingPromises = bookedItems.map(async (item: RentalItem) => {
         try {
           const bookingRes = await fetch(`${API_URL}/bookings/public/item/${item._id}`);
@@ -393,11 +394,12 @@ export default function RentalsPage() {
                   {(() => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    const futureBookings = bookingInfo[item._id]?.filter(booking => {
+                    const itemBookings = Array.isArray(bookingInfo[item._id]) ? bookingInfo[item._id] : [];
+                    const futureBookings = itemBookings.filter(booking => {
                       const returnDate = new Date(booking.returnDate);
                       returnDate.setHours(0, 0, 0, 0);
                       return returnDate >= today && booking.status === 'booked';
-                    }) || [];
+                    });
                     if (item.status !== 'booked' || !futureBookings.length) return null;
                     return (
                       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
