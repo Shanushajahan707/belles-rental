@@ -86,7 +86,7 @@ export default function RentalsPage() {
         return;   
       }
 
-      const response = await fetch(`${API_URL}/items`);
+      const response = await fetch(`${API_URL}/items?limit=10000`);
       if (!response.ok) {
         if (response.status === 401) {
           setError('Unable to load rentals right now. Please refresh or contact support.');
