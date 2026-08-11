@@ -79,7 +79,13 @@ export class InvoiceController {
 
   async getAllInvoices(req: Request, res: Response): Promise<void> {
     try {
-      const invoices = await this.invoiceService.getAllInvoices();
+      const { page, limit, status, search } = req.query;
+      const invoices = await this.invoiceService.getAllInvoices(
+        page ? parseInt(page as string) : 1,
+        limit ? parseInt(limit as string) : 20,
+        status as string,
+        search as string
+      );
       res.json(invoices);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

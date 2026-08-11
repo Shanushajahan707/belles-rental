@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { Plus, ArrowLeft, Play, CheckCircle, Square, Trash2, Edit, X, Calendar } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
+import Pagination from '@/components/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Booking {
   _id: string;
@@ -46,11 +48,15 @@ export default function BookingsManagement() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   useEffect(() => {
     checkAuth();
     fetchBookings();
-  }, []);
+  }, [currentPage, filterStatus, debouncedSearchQuery, dateRange]);
 
   const checkAuth = () => {
     const token = localStorage.getItem('token');
@@ -69,12 +75,21 @@ export default function BookingsManagement() {
 
       let url = '/bookings';
       const params = new URLSearchParams();
+      params.append('page', currentPage.toString());
+      params.append('limit', itemsPerPage.toString());
+      
+      if (filterStatus !== 'all') {
+        params.append('status', filterStatus);
+      }
+      if (debouncedSearchQuery) {
+        params.append('search', debouncedSearchQuery);
+      }
       if (dateRange.startDate) params.append('startDate', dateRange.startDate);
       if (dateRange.endDate) params.append('endDate', dateRange.endDate);
-      if (params.toString()) url += `?${params.toString()}`;
 
-      const response = await api.get(url);
-      setBookings(response.data);
+      const response = await api.get(`/bookings?${params.toString()}`);
+      setBookings(response.data.bookings || response.data);
+      setTotalItems(response.data.total || response.data.length);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast.addToast({
@@ -189,18 +204,18 @@ export default function BookingsManagement() {
     setIsImageModalOpen(true);
   };
 
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
-    const search = searchQuery.trim().toLowerCase();
-    const matchesSearch =
-      !search ||
-      booking.bookingNumber.toLowerCase().includes(search) ||
-      booking.customerName.toLowerCase().includes(search) ||
-      booking.phone.toLowerCase().includes(search) ||
-      booking.createdBy.toLowerCase().includes(search);
+  const filteredBookings = bookings;
 
-    return matchesStatus && matchesSearch;
-  });
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handleFilterChange = (filterType: 'status' | 'search', value: string) => {
+    if (filterType === 'status') {
+      setFilterStatus(value as typeof filterStatus);
+    } else if (filterType === 'search') {
+      setSearchQuery(value);
+    }
+    setCurrentPage(1);
+  };
 
   if (loading) {
     return (
@@ -239,7 +254,7 @@ export default function BookingsManagement() {
               <select
                 id="bookingStatusFilter"
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
               >
                 <option value="all">All</option>
@@ -253,7 +268,7 @@ export default function BookingsManagement() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
                 placeholder="Search by booking #, customer, phone, or created by"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200"
               />
@@ -286,7 +301,10 @@ export default function BookingsManagement() {
                   />
                 </div>
                 <button
-                  onClick={fetchBookings}
+                  onClick={() => {
+                    setCurrentPage(1);
+                    fetchBookings();
+                  }}
                   className="px-3 py-1 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors text-xs font-medium"
                 >
                   Apply
@@ -295,6 +313,7 @@ export default function BookingsManagement() {
                   <button
                     onClick={() => {
                       setDateRange({ startDate: '', endDate: '' });
+                      setCurrentPage(1);
                       fetchBookings();
                     }}
                     className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-xs font-medium"
@@ -645,6 +664,17 @@ export default function BookingsManagement() {
             </div>
           </div>
         </div>
+
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            showItemsInfo={true}
+          />
+        )}
       </div >
 
       {/* Booking Details Modal */}
