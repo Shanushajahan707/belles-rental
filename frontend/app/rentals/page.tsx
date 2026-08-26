@@ -113,14 +113,21 @@ export default function RentalsPage() {
           if (bookingArray.length > 0) {
             return {
               itemId: item._id,
-              bookings: bookingArray.map((booking: any) => ({
-                bookingNumber: booking.bookingNumber,
-                customerName: booking.customerName,
-                startDate: booking.startDate,
-                returnDate: booking.returnDate,
-                status: booking.status,
-                priceType: booking.items?.[0]?.priceType || 'full',
-              }))
+              bookings: bookingArray.map((booking: any) => {
+                // Find the specific item in this booking that matches the current item
+                const matchingItem = booking.items?.find((bookingItem: any) =>
+                  (bookingItem.itemId?.toString() === item._id.toString()) ||
+                  (bookingItem.itemId?._id?.toString() === item._id.toString())
+                );
+                return {
+                  bookingNumber: booking.bookingNumber,
+                  customerName: booking.customerName,
+                  startDate: booking.startDate,
+                  returnDate: booking.returnDate,
+                  status: booking.status,
+                  priceType: matchingItem?.priceType || 'full',
+                };
+              })
             };
           }
           return null;
