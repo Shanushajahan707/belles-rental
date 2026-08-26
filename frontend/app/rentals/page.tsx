@@ -24,7 +24,6 @@ interface RentalItem {
 
 interface BookingInfo {
   bookingNumber: string;
-  customerName: string;
   startDate: string;
   returnDate: string;
   status: string;
@@ -115,7 +114,6 @@ export default function RentalsPage() {
               itemId: item._id,
               bookings: bookingArray.map((booking: any) => ({
                 bookingNumber: booking.bookingNumber,
-                customerName: booking.customerName,
                 startDate: booking.startDate,
                 returnDate: booking.returnDate,
                 status: booking.status,
