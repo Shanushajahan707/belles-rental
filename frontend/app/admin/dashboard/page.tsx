@@ -205,6 +205,40 @@ export default function AdminDashboard() {
       return;
     }
 
+    // Date validation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const startDate = new Date(availabilityCheck.startDate);
+    const endDate = new Date(availabilityCheck.endDate);
+
+    // Check if dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      toast.addToast({
+        message: 'Invalid date format. Please use valid dates.',
+        type: 'error',
+      });
+      return;
+    }
+
+    // Check if start date is before end date
+    if (startDate > endDate) {
+      toast.addToast({
+        message: 'Start date cannot be after return date.',
+        type: 'error',
+      });
+      return;
+    }
+
+    // Check if start date is in the past
+    if (startDate < today) {
+      toast.addToast({
+        message: 'Start date cannot be in the past.',
+        type: 'error',
+      });
+      return;
+    }
+
     try {
       setCheckingAvailability(true);
       setAvailabilityResult(null);
@@ -824,6 +858,7 @@ export default function AdminDashboard() {
                     type="date"
                     value={availabilityCheck.startDate}
                     onChange={(e) => setAvailabilityCheck({ ...availabilityCheck, startDate: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-black"
                   />
                 </div>
@@ -834,6 +869,7 @@ export default function AdminDashboard() {
                     type="date"
                     value={availabilityCheck.endDate}
                     onChange={(e) => setAvailabilityCheck({ ...availabilityCheck, endDate: e.target.value })}
+                    min={availabilityCheck.startDate || new Date().toISOString().split('T')[0]}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-black"
                   />
                 </div>

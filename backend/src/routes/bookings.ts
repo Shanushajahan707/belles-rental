@@ -7,11 +7,11 @@ const router = Router();
 const bookingController = new BookingController();
 
 router.get('/check-availability', authenticate, (req: Request, res: Response) => bookingController.checkItemAvailability(req, res));
-router.get('/', (req: Request, res: Response) => bookingController.getAllBookings(req, res));
+router.get('/', authenticate, (req: Request, res: Response) => bookingController.getAllBookings(req, res));
 router.get('/dashboard/stats', authenticate, (req: Request, res: Response) => bookingController.getDashboardStats(req, res));
 router.get('/fetchItems', authenticate, (req: Request, res: Response) => bookingController.getItems(req, res));
 router.get('/item/:itemId', authenticate, (req: Request, res: Response) => bookingController.getBookingHistoryByItemId(req, res));
-router.get('/public/item/:itemId', (req: Request, res: Response) => bookingController.getBookingHistoryByItemId(req, res));
+router.get('/public/item/:itemId', (req: Request, res: Response) => bookingController.getPublicBookingHistoryByItemId(req, res));
 router.get('/item/:itemId/stats', authenticate, (req: Request, res: Response) => bookingController.getItemStats(req, res));
 router.get('/item/:itemId/earnings', authenticate, (req: Request, res: Response) => bookingController.getItemEarnings(req, res));
 router.get('/monthly-earnings', authenticate, (req: Request, res: Response) => bookingController.getMonthlyEarnings(req, res));

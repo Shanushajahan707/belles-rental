@@ -8,11 +8,6 @@ const router = Router();
 const invoiceService = new InvoiceService();
 const invoiceController = new InvoiceController(invoiceService);
 
-// Test route to verify invoice routes are working
-router.get('/test', (req: Request, res: Response) => {
-  res.json({ message: 'Invoice routes are working!' });
-});
-
 // Generate invoice for a booking
 router.post('/generate', authenticate, (req: Request, res: Response) => {
   invoiceController.generateInvoice(req, res);
