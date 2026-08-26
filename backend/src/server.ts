@@ -25,7 +25,6 @@ app.use('/api/public', publicRoutes);
 app.use('/api/today-bookings', todayBookingsRoutes);
 
 app.use('/api/invoices', invoiceRoutes);
-console.log('Invoice routes loaded');
 
 app.get('/', (req, res) => {
   res.json({ message: 'Belles Avenue Rental API' });
