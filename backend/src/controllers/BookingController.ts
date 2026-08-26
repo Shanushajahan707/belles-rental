@@ -52,6 +52,28 @@ export class BookingController {
     }
   }
 
+  async getPublicBookingHistoryByItemId(req: Request, res: Response): Promise<void> {
+    try {
+      const { itemId } = req.params;
+      const bookings = await this.bookingService.getBookingHistoryByItemId(itemId);
+      
+      // Filter out sensitive customer data for public access
+      const publicBookings = bookings.map(booking => ({
+        bookingNumber: booking.bookingNumber,
+        startDate: booking.startDate,
+        returnDate: booking.returnDate,
+        status: booking.status,
+        items: booking.items.map(item => ({
+          priceType: item.priceType || 'full'
+        }))
+      }));
+      
+      res.json(publicBookings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async createBooking(req: Request, res: Response): Promise<void> {
     try {
       // Use the dealedStaff field from the form as createdBy

@@ -24,7 +24,6 @@ interface RentalItem {
 
 interface BookingInfo {
   bookingNumber: string;
-  customerName: string;
   startDate: string;
   returnDate: string;
   status: string;
