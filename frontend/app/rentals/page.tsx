@@ -113,14 +113,21 @@ export default function RentalsPage() {
           if (bookingArray.length > 0) {
             return {
               itemId: item._id,
-              bookings: bookingArray.map((booking: any) => ({
-                bookingNumber: booking.bookingNumber,
-                customerName: booking.customerName,
-                startDate: booking.startDate,
-                returnDate: booking.returnDate,
-                status: booking.status,
-                priceType: booking.items?.[0]?.priceType || 'full',
-              }))
+              bookings: bookingArray.map((booking: any) => {
+                // Find the specific item in this booking that matches the current item
+                const matchingItem = booking.items?.find((bookingItem: any) =>
+                  (bookingItem.itemId?.toString() === item._id.toString()) ||
+                  (bookingItem.itemId?._id?.toString() === item._id.toString())
+                );
+                return {
+                  bookingNumber: booking.bookingNumber,
+                  customerName: booking.customerName,
+                  startDate: booking.startDate,
+                  returnDate: booking.returnDate,
+                  status: booking.status,
+                  priceType: matchingItem?.priceType || 'full',
+                };
+              })
             };
           }
           return null;
@@ -444,6 +451,16 @@ export default function RentalsPage() {
                       return booking.status === 'running' && startDate <= today && returnDate >= today;
                     });
                     if (item.status !== 'running' || !activeRunningBooking) return null;
+                    
+                    // Find upcoming bookings that start after the current running booking ends
+                    const runningReturnDate = new Date(activeRunningBooking.returnDate);
+                    runningReturnDate.setHours(0, 0, 0, 0);
+                    const upcomingBookings = (bookingInfo[item._id] || []).filter(booking => {
+                      const startDate = new Date(booking.startDate);
+                      startDate.setHours(0, 0, 0, 0);
+                      return booking.status === 'booked' && startDate > runningReturnDate;
+                    });
+                    
                     return (
                       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                         <p className="text-xs sm:text-sm text-blue-800 font-medium flex items-center gap-2 mb-2">
@@ -459,6 +476,24 @@ export default function RentalsPage() {
                               </span>
                             </p>
                           </div>
+                          {upcomingBookings.length > 0 && (
+                            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <p className="font-semibold text-yellow-800 mb-2 text-xs flex items-center gap-1">
+                                <span className="text-yellow-600">📅</span>
+                                Upcoming Bookings ({upcomingBookings.length}):
+                              </p>
+                              {upcomingBookings.map((booking, index) => (
+                                <div key={booking.bookingNumber} className="border-t border-yellow-200 pt-2 first:border-t-0 first:pt-0">
+                                  <p><span className="font-semibold">{index + 1}.</span> {formatBookingDate(booking.startDate)} to {formatBookingDate(booking.returnDate)}</p>
+                                  <p className="text-yellow-600 mt-1">
+                                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${booking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                      {booking.priceType === 'half' ? 'Half Price' : 'Full Price'}
+                                    </span>
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

@@ -69,18 +69,23 @@ export default function AdminDashboard() {
   // Availability checker state
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [availabilityCheck, setAvailabilityCheck] = useState({
-    itemCode: '',
+    selectedItems: [] as string[],
     startDate: '',
     endDate: ''
   });
   const [availabilityResult, setAvailabilityResult] = useState<any>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [allItems, setAllItems] = useState<any[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [itemSearchQuery, setItemSearchQuery] = useState('');
+  const [showItemDropdown, setShowItemDropdown] = useState(false);
 
   useEffect(() => {
     checkAuth();
     fetchStats();
     fetchTodayBookings();
     fetchMonthlyEarnings();
+    fetchItems();
   }, []);
 
   useEffect(() => {
@@ -169,6 +174,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchItems = async () => {
+    try {
+      setLoadingItems(true);
+      const response = await api.get('/items?limit=10000');
+      setAllItems(response.data.items || response.data || []);
+    } catch (error) {
+      console.error('Error fetching items:', error);
+      toast.addToast({
+        message: 'Failed to load items',
+        type: 'error',
+      });
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -176,9 +197,9 @@ export default function AdminDashboard() {
   };
 
   const handleCheckAvailability = async () => {
-    if (!availabilityCheck.itemCode || !availabilityCheck.startDate || !availabilityCheck.endDate) {
+    if (availabilityCheck.selectedItems.length === 0 || !availabilityCheck.startDate || !availabilityCheck.endDate) {
       toast.addToast({
-        message: 'Please fill in all fields',
+        message: 'Please select at least one item and fill in all date fields',
         type: 'error',
       });
       return;
@@ -188,15 +209,21 @@ export default function AdminDashboard() {
       setCheckingAvailability(true);
       setAvailabilityResult(null);
       
-      const response = await api.get('/bookings/check-availability', {
-        params: {
-          itemCode: availabilityCheck.itemCode,
-          startDate: availabilityCheck.startDate,
-          endDate: availabilityCheck.endDate
-        }
-      });
+      // Check availability for each selected item
+      const results = await Promise.all(
+        availabilityCheck.selectedItems.map(async (itemCode) => {
+          const response = await api.get('/bookings/check-availability', {
+            params: {
+              itemCode,
+              startDate: availabilityCheck.startDate,
+              endDate: availabilityCheck.endDate
+            }
+          });
+          return response.data;
+        })
+      );
       
-      setAvailabilityResult(response.data);
+      setAvailabilityResult(results);
     } catch (error: any) {
       console.error('Error checking availability:', error);
       toast.addToast({
@@ -207,6 +234,29 @@ export default function AdminDashboard() {
       setCheckingAvailability(false);
     }
   };
+
+  const handleAddItem = (itemCode: string) => {
+    if (!availabilityCheck.selectedItems.includes(itemCode)) {
+      setAvailabilityCheck({
+        ...availabilityCheck,
+        selectedItems: [...availabilityCheck.selectedItems, itemCode]
+      });
+    }
+    setItemSearchQuery('');
+    setShowItemDropdown(false);
+  };
+
+  const handleRemoveItem = (itemCode: string) => {
+    setAvailabilityCheck({
+      ...availabilityCheck,
+      selectedItems: availabilityCheck.selectedItems.filter(code => code !== itemCode)
+    });
+  };
+
+  const filteredItems = allItems.filter(item =>
+    item.itemCode.toLowerCase().includes(itemSearchQuery.toLowerCase()) ||
+    item.name.toLowerCase().includes(itemSearchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -700,7 +750,9 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setShowAvailabilityModal(false);
                     setAvailabilityResult(null);
-                    setAvailabilityCheck({ itemCode: '', startDate: '', endDate: '' });
+                    setAvailabilityCheck({ selectedItems: [], startDate: '', endDate: '' });
+                    setItemSearchQuery('');
+                    setShowItemDropdown(false);
                   }}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
@@ -710,14 +762,60 @@ export default function AdminDashboard() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Code</label>
-                  <input
-                    type="text"
-                    value={availabilityCheck.itemCode}
-                    onChange={(e) => setAvailabilityCheck({ ...availabilityCheck, itemCode: e.target.value.toUpperCase() })}
-                    placeholder="Enter item code (e.g., NECK001)"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-black"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Items</label>
+                  <div className="relative">
+                    <div className="border border-gray-300 rounded-xl p-2 min-h-[48px] flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent">
+                      {availabilityCheck.selectedItems.map(itemCode => {
+                        const item = allItems.find(i => i.itemCode === itemCode);
+                        return (
+                          <span key={itemCode} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm">
+                            {itemCode}
+                            {item && <span className="text-emerald-600 text-xs">({item.name})</span>}
+                            <button
+                              onClick={() => handleRemoveItem(itemCode)}
+                              className="ml-1 hover:bg-emerald-200 rounded-full p-0.5"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                      <input
+                        type="text"
+                        value={itemSearchQuery}
+                        onChange={(e) => {
+                          setItemSearchQuery(e.target.value);
+                          setShowItemDropdown(true);
+                        }}
+                        onFocus={() => setShowItemDropdown(true)}
+                        placeholder="Search items..."
+                        className="flex-1 min-w-[120px] outline-none text-black px-2 py-1"
+                      />
+                    </div>
+                    
+                    {showItemDropdown && itemSearchQuery && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {filteredItems.length === 0 ? (
+                          <div className="p-3 text-gray-500 text-sm">No items found</div>
+                        ) : (
+                          filteredItems.map(item => (
+                            <div
+                              key={item._id}
+                              onClick={() => handleAddItem(item.itemCode)}
+                              className="p-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-800">{item.itemCode}</div>
+                              <div className="text-sm text-gray-600">{item.name}</div>
+                              <div className="text-xs text-gray-500">{item.category}</div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {availabilityCheck.selectedItems.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">{availabilityCheck.selectedItems.length} item(s) selected</p>
+                  )}
                 </div>
 
                 <div>
@@ -751,89 +849,94 @@ export default function AdminDashboard() {
 
               {availabilityResult && (
                 <div className="mt-6 space-y-4">
-                  {availabilityResult.available ? (
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                        <h3 className="font-bold text-green-800">Available!</h3>
-                      </div>
-                      <p className="text-green-700 text-sm">{availabilityResult.message}</p>
-                      
-                      {availabilityResult.item && (
-                        <div className="mt-3 p-3 bg-white rounded-lg">
-                          <p className="font-medium text-gray-800">{availabilityResult.item.name}</p>
-                          <p className="text-sm text-gray-600">Code: {availabilityResult.item.itemCode}</p>
-                          {availabilityResult.item.supportsHalfPricing && (
+                  <h3 className="font-semibold text-gray-800">Availability Results ({availabilityResult.length} items)</h3>
+                  {availabilityResult.map((result: any, index: number) => (
+                    <div key={index} className="border border-gray-200 rounded-xl overflow-hidden">
+                      {result.available ? (
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <CheckCircle className="w-6 h-6 text-green-600" />
+                            <div>
+                              <h3 className="font-bold text-green-800">{result.item?.itemCode || 'Item'} - Available!</h3>
+                              <p className="text-green-700 text-sm">{result.item?.name || ''}</p>
+                            </div>
+                          </div>
+                          <p className="text-green-700 text-sm">{result.message}</p>
+                          
+                          {result.item && result.item.supportsHalfPricing && (
                             <div className="mt-2 flex items-center gap-2 text-sm">
                               <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">Half Pricing Supported</span>
                             </div>
                           )}
-                        </div>
-                      )}
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                        <div className={`p-2 rounded-lg ${availabilityResult.availabilityDetails.fullAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                          <p className="font-medium">Full Booking</p>
-                          <p className="text-xs">{availabilityResult.availabilityDetails.fullAvailable ? 'Available' : 'Not Available'}</p>
-                        </div>
-                        <div className={`p-2 rounded-lg ${availabilityResult.availabilityDetails.halfAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                          <p className="font-medium">Half Booking</p>
-                          <p className="text-xs">{availabilityResult.availabilityDetails.halfAvailable ? 'Available' : 'Not Available'}</p>
-                        </div>
-                      </div>
-
-                      {availabilityResult.availabilityDetails.halfAvailable && !availabilityResult.availabilityDetails.fullAvailable && (
-                        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <div className="flex items-start gap-2">
-                            <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-amber-700">
-                              <span className="font-medium">Partial Availability:</span> Only one part of this item is available for booking. The other part is already booked for these dates.
-                            </p>
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                            <div className={`p-2 rounded-lg ${result.availabilityDetails.fullAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                              <p className="font-medium">Full Booking</p>
+                              <p className="text-xs">{result.availabilityDetails.fullAvailable ? 'Available' : 'Not Available'}</p>
+                            </div>
+                            <div className={`p-2 rounded-lg ${result.availabilityDetails.halfAvailable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                              <p className="font-medium">Half Booking</p>
+                              <p className="text-xs">{result.availabilityDetails.halfAvailable ? 'Available' : 'Not Available'}</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <XCircle className="w-6 h-6 text-red-600" />
-                        <h3 className="font-bold text-red-800">Not Available</h3>
-                      </div>
-                      <p className="text-red-700 text-sm">{availabilityResult.message}</p>
 
-                      {availabilityResult.item && (
-                        <div className="mt-3 p-3 bg-white rounded-lg">
-                          <p className="font-medium text-gray-800">{availabilityResult.item.name}</p>
-                          <p className="text-sm text-gray-600">Code: {availabilityResult.item.itemCode}</p>
-                          <p className="text-sm text-gray-500 mt-1">Status: {availabilityResult.item.status}</p>
-                        </div>
-                      )}
-
-                      {availabilityResult.availabilityDetails.conflictingBookings.length > 0 && (
-                        <div className="mt-3">
-                          <p className="text-sm font-medium text-gray-700 mb-2">Conflicting Bookings:</p>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {availabilityResult.availabilityDetails.conflictingBookings.map((booking: any, index: number) => (
-                              <div key={index} className="p-2 bg-white rounded-lg text-xs">
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <p className="font-medium text-gray-800">{booking.customerName}</p>
-                                    <p className="text-gray-600">{booking.bookingNumber}</p>
-                                  </div>
-                                  <span className={`px-2 py-1 rounded-full ${booking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                    {booking.priceType}
-                                  </span>
-                                </div>
-                                <p className="text-gray-500 mt-1">
-                                  {booking.startDate} to {booking.endDate}
+                          {result.availabilityDetails.halfAvailable && !result.availabilityDetails.fullAvailable && (
+                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                              <div className="flex items-start gap-2">
+                                <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <p className="text-sm text-amber-700">
+                                  <span className="font-medium">Partial Availability:</span> Only one part of this item is available for booking. The other part is already booked for these dates.
                                 </p>
                               </div>
-                            ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-gradient-to-r from-red-50 to-rose-50 p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <XCircle className="w-6 h-6 text-red-600" />
+                            <div>
+                              <h3 className="font-bold text-red-800">{result.item?.itemCode || 'Item'} - Not Available</h3>
+                              <p className="text-red-700 text-sm">{result.item?.name || ''}</p>
+                            </div>
                           </div>
+                          <p className="text-red-700 text-sm">{result.message}</p>
+
+                          {result.item && (
+                            <div className="mt-3 p-3 bg-white rounded-lg">
+                              <p className="font-medium text-gray-800">{result.item.name}</p>
+                              <p className="text-sm text-gray-600">Code: {result.item.itemCode}</p>
+                              <p className="text-sm text-gray-500 mt-1">Status: {result.item.status}</p>
+                            </div>
+                          )}
+
+                          {result.availabilityDetails.conflictingBookings.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-gray-700 mb-2">Conflicting Bookings:</p>
+                              <div className="space-y-2 max-h-40 overflow-y-auto">
+                                {result.availabilityDetails.conflictingBookings.map((booking: any, bookingIndex: number) => (
+                                  <div key={bookingIndex} className="p-2 bg-white rounded-lg text-xs">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <p className="font-medium text-gray-800">{booking.customerName}</p>
+                                        <p className="text-gray-600">{booking.bookingNumber}</p>
+                                      </div>
+                                      <span className={`px-2 py-1 rounded-full ${booking.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                        {booking.priceType}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-500 mt-1">
+                                      {booking.startDate} to {booking.endDate}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
