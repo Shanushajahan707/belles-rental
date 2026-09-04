@@ -444,6 +444,84 @@ export class BookingService {
       bookingData.balanceAmount = balanceAmount;
     }
 
+    // Handle item status updates when items are added or removed
+    if (bookingData.items) {
+      const updatedItems = bookingData.items;
+      const originalItems = existingBooking.items;
+
+      // Helper function to extract itemId consistently
+      const extractItemId = (item: any): string => {
+        if (typeof item.itemId === 'string') {
+          return item.itemId;
+        } else if (item.itemId && typeof item.itemId === 'object' && item.itemId._id) {
+          return item.itemId._id.toString();
+        } else if (item.itemId && typeof item.itemId.toString === 'function') {
+          return item.itemId.toString();
+        }
+        throw new Error(`Invalid itemId structure for item ${item.itemCode}`);
+      };
+
+      // Get original item IDs for comparison
+      const originalItemIds = new Set(
+        originalItems.map(item => extractItemId(item))
+      );
+
+      // Get updated item IDs for comparison
+      const updatedItemIds = new Set(
+        updatedItems.map(item => extractItemId(item))
+      );
+
+      // Find newly added items (in updated but not in original)
+      const newlyAddedItems = updatedItems.filter(item => {
+        const itemId = extractItemId(item);
+        return !originalItemIds.has(itemId);
+      });
+
+      // Find removed items (in original but not in updated)
+      const removedItems = originalItems.filter(item => {
+        const itemId = extractItemId(item);
+        return !updatedItemIds.has(itemId);
+      });
+
+      // Set status to 'booked' for newly added items
+      for (const item of newlyAddedItems) {
+        try {
+          const itemId = extractItemId(item);
+          await this.rentalItemRepository.updateStatus(itemId, 'booked');
+          console.log(`Set item ${item.itemCode} (ID: ${itemId}) status to 'booked' - added to booking ${id}`);
+        } catch (error) {
+          console.error(`Failed to update item ${item.itemCode} status to 'booked':`, error);
+          // Don't fail the entire update if one item status update fails
+        }
+      }
+
+      // Set status to 'available' for removed items (if no other active bookings)
+      for (const item of removedItems) {
+        try {
+          const itemId = extractItemId(item);
+          
+          // Check if item has other active bookings
+          const activeBookings = await this.bookingRepository.findByItemId(itemId);
+          const otherActiveBookings = activeBookings.filter(b =>
+            b._id.toString() !== id &&
+            ['booked', 'running'].includes(b.status) &&
+            (b.status === 'running' || (b.status === 'booked' && new Date(b.returnDate) >= new Date()))
+          );
+
+          if (otherActiveBookings.length > 0) {
+            console.log(`Item ${item.itemCode} has ${otherActiveBookings.length} other active bookings. Keeping status as 'booked'.`);
+            await this.rentalItemRepository.updateStatus(itemId, 'booked');
+          } else {
+            await this.rentalItemRepository.updateStatus(itemId, 'available');
+            console.log(`Set item ${item.itemCode} (ID: ${itemId}) status to 'available' - removed from booking ${id}`);
+          }
+        } catch (error) {
+          console.error(`Failed to update item ${item.itemCode} status:`, error);
+          // Don't fail the entire update if one item status update fails
+        }
+      }
+    }
+
     // Proceed with the update
     return this.bookingRepository.update(id, bookingData);
   }
