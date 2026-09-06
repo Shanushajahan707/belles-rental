@@ -506,28 +506,38 @@ export default function AdminDashboard() {
               {stats.dueTodayBookings.filter(b =>
                 b.customerName.toLowerCase().includes(searchDueToday.toLowerCase()) ||
                 b.phone.includes(searchDueToday)
-              ).map((booking) => (
-                <div key={booking._id} className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-800">{booking.customerName}</p>
-                      <p className="text-sm text-gray-600">{booking.phone}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Due: {new Date(booking.returnDate).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 rounded-full text-sm font-semibold shadow-sm">
-                        Due Today
-                      </span>
+              ).map((booking) => {
+                const totalSecurity = booking.items?.reduce((sum: number, item: any) => sum + (item.security || 0), 0) || 0;
+                const securityDiscount = booking.securityDiscount || 0;
+                const returnableAmount = totalSecurity - securityDiscount;
+                return (
+                  <div key={booking._id} className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-800">{booking.customerName}</p>
+                        <p className="text-sm text-gray-600">{booking.phone}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Due: {new Date(booking.returnDate).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </p>
+                        <div className="mt-2 bg-green-50 rounded-lg p-2">
+                          <p className="text-xs text-green-600 font-medium">Returnable Amount</p>
+                          <p className="text-sm font-bold text-green-700">₹{returnableAmount}</p>
+                          <p className="text-xs text-green-600">if no damage</p>
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <span className="px-3 py-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 rounded-full text-sm font-semibold shadow-sm">
+                          Due Today
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
