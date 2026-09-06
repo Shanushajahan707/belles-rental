@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { API_URL } from '@/config';
-import { Search, Filter, Gem, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Search, Filter, Gem, CheckCircle, Clock, XCircle, X, ArrowUpDown } from 'lucide-react';
 import { checkBackendHealth, getCachedBackendStatus } from '@/lib/backendHealth';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
+import SkeletonCard from '@/components/SkeletonCard';
 
 interface RentalItem {
   _id: string;
@@ -54,103 +56,92 @@ const categories = [
   'Earchain (Antique)',
 ];
 
+// Query function to fetch items
+const fetchItems = async (): Promise<RentalItem[]> => {
+  const backendStatus = await checkBackendHealth();
+  if (backendStatus === 'disconnected') {
+    throw new Error('Backend is not reachable. Please check your connection or try again in 50 seconds.');
+  }
+
+  const response = await fetch(`${API_URL}/items?limit=10000`);
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unable to load rentals right now. Please refresh or contact support.');
+    }
+    throw new Error(`Failed to load items: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : (data.items || []);
+};
+
+// Query function to fetch booking info for a specific item
+const fetchBookingInfo = async (itemId: string): Promise<BookingInfo[]> => {
+  const response = await fetch(`${API_URL}/bookings/public/item/${itemId}`);
+  if (!response.ok) {
+    console.error(`Booking fetch failed for item ${itemId}:`, response.status);
+    return [];
+  }
+
+  const bookingData = await response.json();
+  const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
+  
+  return bookingArray.map((booking: any) => ({
+    bookingNumber: booking.bookingNumber,
+    customerName: booking.customerName,
+    startDate: booking.startDate,
+    returnDate: booking.returnDate,
+    status: booking.status,
+    priceType: booking.items?.find((bookingItem: any) =>
+      (bookingItem.itemId?.toString() === itemId.toString()) ||
+      (bookingItem.itemId?._id?.toString() === itemId.toString())
+    )?.priceType || 'full',
+  }));
+};
+
 export default function RentalsPage() {
-  const [items, setItems] = useState<RentalItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<RentalItem[]>([]);
-  const [bookingInfo, setBookingInfo] = useState<{ [itemId: string]: BookingInfo[] }>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'name' | 'price' | 'availability'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const itemsPerPage = 12;
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
+  // Fetch items using React Query
+  const { data: items = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['items'],
+    queryFn: fetchItems,
+    staleTime: 60000, // 1 minute
+  });
 
-  useEffect(() => {
-    filterItems();
-    setCurrentPage(1);
-  }, [items, searchQuery, selectedCategory, selectedStatus]);
-
-  const fetchItems = async () => {
-    try {
-      // Check backend health first
-      const backendStatus = await checkBackendHealth();
-      if (backendStatus === 'disconnected') {
-        setError('Backend is not reachable. Please check your connection or try again in 50 seconds.');
-        return;   
-      }
-
-      const response = await fetch(`${API_URL}/items?limit=10000`);
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Unable to load rentals right now. Please refresh or contact support.');
-          return;
-        }
-        throw new Error(`Failed to load items: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const itemsArray = Array.isArray(data) ? data : (data.items || []);
-      setItems(itemsArray);
-
-      // Fetch booking info for booked/running items in parallel
-      const bookedItems = itemsArray.filter((item: RentalItem) => item.status === 'booked' || item.status === 'running');
+  // Fetch booking info for booked/running items using React Query
+  const bookedItems = items.filter((item: RentalItem) => item.status === 'booked' || item.status === 'running');
+  
+  const { data: bookingInfo = {} } = useQuery({
+    queryKey: ['bookingInfo', bookedItems.map((item: RentalItem) => item._id)],
+    queryFn: async () => {
       const bookingPromises = bookedItems.map(async (item: RentalItem) => {
         try {
-          const bookingRes = await fetch(`${API_URL}/bookings/public/item/${item._id}`);
-          if (!bookingRes.ok) {
-            console.error(`Booking fetch failed for item ${item._id}:`, bookingRes.status);
-            return null;
-          }
-          const bookingData = await bookingRes.json();
-          const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
-          if (bookingArray.length > 0) {
-            return {
-              itemId: item._id,
-              bookings: bookingArray.map((booking: any) => {
-                // Find the specific item in this booking that matches the current item
-                const matchingItem = booking.items?.find((bookingItem: any) =>
-                  (bookingItem.itemId?.toString() === item._id.toString()) ||
-                  (bookingItem.itemId?._id?.toString() === item._id.toString())
-                );
-                return {
-                  bookingNumber: booking.bookingNumber,
-                  customerName: booking.customerName,
-                  startDate: booking.startDate,
-                  returnDate: booking.returnDate,
-                  status: booking.status,
-                  priceType: matchingItem?.priceType || 'full',
-                };
-              })
-            };
-          }
-          return null;
-        } catch (bookingError) {
-          console.error(`Error fetching booking for item ${item._id}:`, bookingError);
-          return null;
+          const bookings = await fetchBookingInfo(item._id);
+          return { itemId: item._id, bookings };
+        } catch (error) {
+          console.error(`Error fetching booking for item ${item._id}:`, error);
+          return { itemId: item._id, bookings: [] };
         }
       });
 
-      const bookingResults = await Promise.all(bookingPromises);
-      const bookings: { [itemId: string]: BookingInfo[] } = {};
-      bookingResults.forEach(result => {
-        if (result) {
-          bookings[result.itemId] = result.bookings;
-        }
+      const results = await Promise.all(bookingPromises);
+      const bookingsMap: { [itemId: string]: BookingInfo[] } = {};
+      results.forEach(result => {
+        bookingsMap[result.itemId] = result.bookings;
       });
-      setBookingInfo(bookings);
-    } catch (fetchError: any) {
-      console.error('Error fetching items:', fetchError);
-      setError('Unable to load rentals right now. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return bookingsMap;
+    },
+    enabled: bookedItems.length > 0,
+    staleTime: 60000, // 1 minute
+  });
 
   const getImageUrl = (img: string) => {
     if (!img) return '';
@@ -163,7 +154,8 @@ export default function RentalsPage() {
     return img;
   };
 
-  const filterItems = () => {
+  // Filter items using useMemo for performance
+  const filteredItems = useMemo(() => {
     let filtered = items;
 
     if (selectedCategory !== 'All') {
@@ -181,8 +173,34 @@ export default function RentalsPage() {
       );
     }
 
-    setFilteredItems(filtered);
-  };
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return sortOrder === 'asc' 
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name);
+        case 'price':
+          return sortOrder === 'asc'
+            ? a.rentPrice - b.rentPrice
+            : b.rentPrice - a.rentPrice;
+        case 'availability':
+          const statusOrder = { available: 0, booked: 1, running: 2, sold_out: 3 };
+          return sortOrder === 'asc'
+            ? statusOrder[a.status] - statusOrder[b.status]
+            : statusOrder[b.status] - statusOrder[a.status];
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [items, searchQuery, selectedCategory, selectedStatus, sortBy, sortOrder]);
+
+  // Reset page when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedStatus]);
 
   const paginatedItems = filteredItems.slice(
     (currentPage - 1) * itemsPerPage,
@@ -206,6 +224,25 @@ export default function RentalsPage() {
     }
   };
 
+  const getCategoryIcon = (category: string) => {
+    if (category.includes('Choker')) return '📿';
+    if (category.includes('Necklace')) return '💎';
+    if (category.includes('Earring') || category.includes('Earchain')) return '✨';
+    if (category.includes('Bangles')) return '⭕';
+    if (category.includes('Chutty')) return '🌸';
+    if (category.includes('Hip Chain')) return '🔗';
+    if (category.includes('Hair')) return '🎀';
+    if (category.includes('Kerala')) return '🪷';
+    return '💍';
+  };
+
+  const hasActiveFilters = searchQuery || selectedCategory !== 'All' || selectedStatus !== 'All';
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('All');
+    setSelectedStatus('All');
+  };
+
   const formatBookingDate = (dateString?: string) => {
     if (!dateString) return 'Date unavailable';
     const date = new Date(dateString);
@@ -213,12 +250,52 @@ export default function RentalsPage() {
     return format(date, 'd/MMMM/yyyy');
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-xl text-gray-700 font-medium">Loading rentals...</p>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100">
+        {/* Navigation */}
+        <nav className="w-full bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <Link href="/" className="flex items-center gap-2">
+                <Gem className="w-8 h-8 text-pink-600" />
+                <span className="text-xl font-bold text-gray-800">Belles Avenue</span>
+              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/"
+                  className="text-gray-600 hover:text-pink-600 transition-colors font-medium"
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/admin/login"
+                  className="text-gray-600 hover:text-pink-600 transition-colors font-medium"
+                >
+                  Admin
+                </Link>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white py-8 sm:py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2">Our Rental Collection</h1>
+            <p className="text-base sm:text-lg text-pink-100 max-w-2xl mx-auto">
+              Discover exquisite jewelry and premium items for your special occasions
+            </p>
+          </div>
+        </div>
+
+        {/* Skeleton Loading */}
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <SkeletonCard key={index} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -232,13 +309,9 @@ export default function RentalsPage() {
             <XCircle className="w-8 h-8 text-red-500" />
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Unable to load rentals</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 mb-6">{error instanceof Error ? error.message : 'Unknown error'}</p>
           <button
-            onClick={() => {
-              setLoading(true);
-              setError('');
-              fetchItems();
-            }}
+            onClick={() => refetch()}
             className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
           >
             Try again
@@ -289,7 +362,7 @@ export default function RentalsPage() {
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6 overflow-hidden">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -338,6 +411,78 @@ export default function RentalsPage() {
                 </svg>
               </div>
             </div>
+
+            <div className="relative min-w-0">
+              <ArrowUpDown className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'availability')}
+                className="pl-10 text-sm pr-10 py-3 border border-gray-200 text-black rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none bg-white w-full max-w-full shadow-sm cursor-pointer hover:border-pink-300 transition-all"
+              >
+                <option value="name">Sort by Name</option>
+                <option value="price">Sort by Price</option>
+                <option value="availability">Sort by Availability</option>
+              </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-200 text-black rounded-xl hover:border-pink-300 transition-all shadow-sm bg-white"
+              title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
+            >
+              <ArrowUpDown className={`w-5 h-5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+              <span className="text-sm font-medium">{sortOrder === 'asc' ? 'A-Z' : 'Z-A'}</span>
+            </button>
+          </div>
+
+          {/* Active Filters and Clear Button */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              {hasActiveFilters && (
+                <>
+                  <span className="text-sm text-gray-600 font-medium">Active filters:</span>
+                  {searchQuery && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-sm">
+                      Search: "{searchQuery}"
+                      <button onClick={() => setSearchQuery('')} className="hover:text-pink-600">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {selectedCategory !== 'All' && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                      {selectedCategory}
+                      <button onClick={() => setSelectedCategory('All')} className="hover:text-purple-600">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {selectedStatus !== 'All' && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                      {selectedStatus}
+                      <button onClick={() => setSelectedStatus('All')} className="hover:text-blue-600">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+            
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-gray-600 hover:text-pink-600 font-medium transition-colors flex items-center gap-1"
+              >
+                <X className="w-4 h-4" />
+                Clear all filters
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -384,8 +529,10 @@ export default function RentalsPage() {
                 <p className="text-xs sm:text-sm text-gray-600 mb-1">
                   <span className="font-medium">Code:</span> {item.itemCode}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-1">
-                  <span className="font-medium">Category:</span> {item.category}
+                <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-1 flex items-center gap-1">
+                  <span className="font-medium">Category:</span> 
+                  <span className="text-lg">{getCategoryIcon(item.category)}</span>
+                  {item.category}
                 </p>
 
                 <div className="border-t border-gray-100 pt-4 mt-4">

@@ -28,12 +28,17 @@ interface Booking {
   returnDate: string;
   actualReturnDate?: string;
   discount: number;
+  rentDiscount?: number;
+  securityDiscount?: number;
+  advancePayment?: number;
   additionalCharges?: number;
   totalAmount: number;
+  balanceAmount?: number;
   status: 'booked' | 'running' | 'completed' | 'overdue';
   createdBy: string;
   createdAt: string;
   note?: string;
+  checkedIn?: boolean;
 }
 
 export default function BookingsManagement() {
@@ -821,14 +826,33 @@ export default function BookingsManagement() {
               </div>
 
               {/* Payment Information */}
-              {selectedBooking.discount > 0 || (selectedBooking.additionalCharges && selectedBooking.additionalCharges > 0) && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Payment Information</h3>
                 <div className="space-y-2">
-                  {selectedBooking.discount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Rent</span>
+                    <span className="font-medium text-gray-900">₹{selectedBooking.items.reduce((sum, item) => sum + (item.rentPrice || 0), 0)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Security</span>
+                    <span className="font-medium text-gray-900">₹{selectedBooking.items.reduce((sum, item) => sum + (item.security || 0), 0)}</span>
+                  </div>
+                  {(selectedBooking.rentDiscount || 0) > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Discount</span>
-                      <span className="font-medium text-green-600">-₹{selectedBooking.discount}</span>
+                      <span className="text-gray-600">Rent Discount</span>
+                      <span className="font-medium text-green-600">-₹{selectedBooking.rentDiscount || 0}</span>
+                    </div>
+                  )}
+                  {(selectedBooking.securityDiscount || 0) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Security Discount</span>
+                      <span className="font-medium text-green-600">-₹{selectedBooking.securityDiscount || 0}</span>
+                    </div>
+                  )}
+                  {(selectedBooking.advancePayment || 0) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Advance Payment</span>
+                      <span className="font-medium text-blue-600">-₹{selectedBooking.advancePayment || 0}</span>
                     </div>
                   )}
                   {selectedBooking.additionalCharges && selectedBooking.additionalCharges > 0 && (
@@ -842,10 +866,22 @@ export default function BookingsManagement() {
                       <span className="text-lg font-semibold text-gray-800">Total Amount</span>
                       <span className="text-lg font-bold text-pink-600">₹{selectedBooking.totalAmount}</span>
                     </div>
+                    {(selectedBooking.balanceAmount || 0) > 0 && (
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm text-gray-600">Balance Amount</span>
+                        <span className="text-sm font-medium text-gray-900">₹{selectedBooking.balanceAmount}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="border-t border-gray-300 pt-2 mt-2 bg-green-50 -mx-2 px-2 py-2 rounded">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-green-800">Returnable Amount</span>
+                      <span className="text-lg font-bold text-green-600">₹{selectedBooking.items.reduce((sum, item) => sum + (item.security || 0), 0) - (selectedBooking.securityDiscount || 0)}</span>
+                    </div>
+                    <p className="text-xs text-green-700 mt-1">Refundable if no damage to items</p>
                   </div>
                 </div>
               </div>
-              )}
 
               {/* Notes */}
               {selectedBooking.note && (
