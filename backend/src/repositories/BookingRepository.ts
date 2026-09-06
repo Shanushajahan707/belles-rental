@@ -42,7 +42,7 @@ export class BookingRepository {
   }
 
   async update(id: string, bookingData: Partial<IBooking>): Promise<IBooking | null> {
-    return Booking.findByIdAndUpdate(id, bookingData, { new: true });
+    return Booking.findByIdAndUpdate(id, bookingData, { new: true }).populate('items.itemId');
   }
 
   async updateStatus(id: string, status: string): Promise<IBooking | null> {
