@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { API_URL } from '@/config';
 import { Search, Filter, Gem, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { checkBackendHealth, getCachedBackendStatus } from '@/lib/backendHealth';
@@ -54,103 +55,90 @@ const categories = [
   'Earchain (Antique)',
 ];
 
+// Query function to fetch items
+const fetchItems = async (): Promise<RentalItem[]> => {
+  const backendStatus = await checkBackendHealth();
+  if (backendStatus === 'disconnected') {
+    throw new Error('Backend is not reachable. Please check your connection or try again in 50 seconds.');
+  }
+
+  const response = await fetch(`${API_URL}/items?limit=10000`);
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unable to load rentals right now. Please refresh or contact support.');
+    }
+    throw new Error(`Failed to load items: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : (data.items || []);
+};
+
+// Query function to fetch booking info for a specific item
+const fetchBookingInfo = async (itemId: string): Promise<BookingInfo[]> => {
+  const response = await fetch(`${API_URL}/bookings/public/item/${itemId}`);
+  if (!response.ok) {
+    console.error(`Booking fetch failed for item ${itemId}:`, response.status);
+    return [];
+  }
+
+  const bookingData = await response.json();
+  const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
+  
+  return bookingArray.map((booking: any) => ({
+    bookingNumber: booking.bookingNumber,
+    customerName: booking.customerName,
+    startDate: booking.startDate,
+    returnDate: booking.returnDate,
+    status: booking.status,
+    priceType: booking.items?.find((bookingItem: any) =>
+      (bookingItem.itemId?.toString() === itemId.toString()) ||
+      (bookingItem.itemId?._id?.toString() === itemId.toString())
+    )?.priceType || 'full',
+  }));
+};
+
 export default function RentalsPage() {
-  const [items, setItems] = useState<RentalItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<RentalItem[]>([]);
-  const [bookingInfo, setBookingInfo] = useState<{ [itemId: string]: BookingInfo[] }>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
+  // Fetch items using React Query
+  const { data: items = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['items'],
+    queryFn: fetchItems,
+    staleTime: 60000, // 1 minute
+  });
 
-  useEffect(() => {
-    filterItems();
-    setCurrentPage(1);
-  }, [items, searchQuery, selectedCategory, selectedStatus]);
-
-  const fetchItems = async () => {
-    try {
-      // Check backend health first
-      const backendStatus = await checkBackendHealth();
-      if (backendStatus === 'disconnected') {
-        setError('Backend is not reachable. Please check your connection or try again in 50 seconds.');
-        return;   
-      }
-
-      const response = await fetch(`${API_URL}/items?limit=10000`);
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Unable to load rentals right now. Please refresh or contact support.');
-          return;
-        }
-        throw new Error(`Failed to load items: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const itemsArray = Array.isArray(data) ? data : (data.items || []);
-      setItems(itemsArray);
-
-      // Fetch booking info for booked/running items in parallel
-      const bookedItems = itemsArray.filter((item: RentalItem) => item.status === 'booked' || item.status === 'running');
+  // Fetch booking info for booked/running items using React Query
+  const bookedItems = items.filter((item: RentalItem) => item.status === 'booked' || item.status === 'running');
+  
+  const { data: bookingInfo = {} } = useQuery({
+    queryKey: ['bookingInfo', bookedItems.map((item: RentalItem) => item._id)],
+    queryFn: async () => {
       const bookingPromises = bookedItems.map(async (item: RentalItem) => {
         try {
-          const bookingRes = await fetch(`${API_URL}/bookings/public/item/${item._id}`);
-          if (!bookingRes.ok) {
-            console.error(`Booking fetch failed for item ${item._id}:`, bookingRes.status);
-            return null;
-          }
-          const bookingData = await bookingRes.json();
-          const bookingArray = Array.isArray(bookingData) ? bookingData : [bookingData];
-          if (bookingArray.length > 0) {
-            return {
-              itemId: item._id,
-              bookings: bookingArray.map((booking: any) => {
-                // Find the specific item in this booking that matches the current item
-                const matchingItem = booking.items?.find((bookingItem: any) =>
-                  (bookingItem.itemId?.toString() === item._id.toString()) ||
-                  (bookingItem.itemId?._id?.toString() === item._id.toString())
-                );
-                return {
-                  bookingNumber: booking.bookingNumber,
-                  customerName: booking.customerName,
-                  startDate: booking.startDate,
-                  returnDate: booking.returnDate,
-                  status: booking.status,
-                  priceType: matchingItem?.priceType || 'full',
-                };
-              })
-            };
-          }
-          return null;
-        } catch (bookingError) {
-          console.error(`Error fetching booking for item ${item._id}:`, bookingError);
-          return null;
+          const bookings = await fetchBookingInfo(item._id);
+          return { itemId: item._id, bookings };
+        } catch (error) {
+          console.error(`Error fetching booking for item ${item._id}:`, error);
+          return { itemId: item._id, bookings: [] };
         }
       });
 
-      const bookingResults = await Promise.all(bookingPromises);
-      const bookings: { [itemId: string]: BookingInfo[] } = {};
-      bookingResults.forEach(result => {
-        if (result) {
-          bookings[result.itemId] = result.bookings;
-        }
+      const results = await Promise.all(bookingPromises);
+      const bookingsMap: { [itemId: string]: BookingInfo[] } = {};
+      results.forEach(result => {
+        bookingsMap[result.itemId] = result.bookings;
       });
-      setBookingInfo(bookings);
-    } catch (fetchError: any) {
-      console.error('Error fetching items:', fetchError);
-      setError('Unable to load rentals right now. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return bookingsMap;
+    },
+    enabled: bookedItems.length > 0,
+    staleTime: 60000, // 1 minute
+  });
 
   const getImageUrl = (img: string) => {
     if (!img) return '';
@@ -163,7 +151,8 @@ export default function RentalsPage() {
     return img;
   };
 
-  const filterItems = () => {
+  // Filter items using useMemo for performance
+  const filteredItems = useMemo(() => {
     let filtered = items;
 
     if (selectedCategory !== 'All') {
@@ -181,8 +170,13 @@ export default function RentalsPage() {
       );
     }
 
-    setFilteredItems(filtered);
-  };
+    return filtered;
+  }, [items, searchQuery, selectedCategory, selectedStatus]);
+
+  // Reset page when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedStatus]);
 
   const paginatedItems = filteredItems.slice(
     (currentPage - 1) * itemsPerPage,
@@ -213,7 +207,7 @@ export default function RentalsPage() {
     return format(date, 'd/MMMM/yyyy');
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center">
         <div className="text-center">
@@ -232,13 +226,9 @@ export default function RentalsPage() {
             <XCircle className="w-8 h-8 text-red-500" />
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Unable to load rentals</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 mb-6">{error instanceof Error ? error.message : 'Unknown error'}</p>
           <button
-            onClick={() => {
-              setLoading(true);
-              setError('');
-              fetchItems();
-            }}
+            onClick={() => refetch()}
             className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
           >
             Try again
