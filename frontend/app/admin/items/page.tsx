@@ -542,7 +542,18 @@ export default function ItemsManagement() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                              {item.image ? <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="flex h-full items-center justify-center"><Gem className="h-5 w-5 text-gray-300" /></div>}
+                              {item.image ? <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" onError={(e) => {
+                                console.error('Image failed to load:', item.name, 'Original URL:', item.image, 'Processed URL:', getImageUrl(item.image));
+                                const match = item.image.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                                if (match?.[1]) {
+                                  const id = match[1];
+                                  const fallbackUrl = `https://lh3.googleusercontent.com/d/${id}=w800`;
+                                  console.log('Trying fallback URL:', fallbackUrl);
+                                  (e.target as HTMLImageElement).src = fallbackUrl;
+                                } else {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }
+                              }} /> : <div className="flex h-full items-center justify-center"><Gem className="h-5 w-5 text-gray-300" /></div>}
                             </div>
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-gray-950">{item.name}</p>
@@ -594,7 +605,18 @@ export default function ItemsManagement() {
                 <article key={item._id} onClick={() => router.push(`/admin/items/${item._id}`)} className="cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition active:scale-[0.995]">
                   <div className="flex gap-3">
                     <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                      {item.image ? <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="flex h-full items-center justify-center"><Gem className="h-7 w-7 text-gray-300" /></div>}
+                      {item.image ? <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover" onError={(e) => {
+                        console.error('Image failed to load:', item.name, 'Original URL:', item.image, 'Processed URL:', getImageUrl(item.image));
+                        const match = item.image.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                        if (match?.[1]) {
+                          const id = match[1];
+                          const fallbackUrl = `https://lh3.googleusercontent.com/d/${id}=w800`;
+                          console.log('Trying fallback URL:', fallbackUrl);
+                          (e.target as HTMLImageElement).src = fallbackUrl;
+                        } else {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }
+                      }} /> : <div className="flex h-full items-center justify-center"><Gem className="h-7 w-7 text-gray-300" /></div>}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">

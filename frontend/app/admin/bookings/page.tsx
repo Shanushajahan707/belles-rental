@@ -209,6 +209,17 @@ export default function BookingsManagement() {
     setIsImageModalOpen(true);
   };
 
+  const getImageUrl = (image?: string) => {
+    if (!image) return '';
+    if (image.includes('drive.google.com')) {
+      const match = image.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match?.[1]) {
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+      }
+    }
+    return image;
+  };
+
   const filteredBookings = bookings;
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);

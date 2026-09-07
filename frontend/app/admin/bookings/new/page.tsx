@@ -1132,9 +1132,16 @@ export default function NewBookingPage() {
                                         alt={item.name}
                                         className="h-full w-full object-cover transition group-hover:scale-105"
                                         onError={(e) => {
-                                          (
-                                            e.currentTarget as HTMLImageElement
-                                          ).style.display = 'none';
+                                          console.error('Image failed to load:', item.name, 'Original URL:', item.image, 'Processed URL:', image);
+                                          const match = item.image?.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                                          if (match?.[1]) {
+                                            const id = match[1];
+                                            const fallbackUrl = `https://lh3.googleusercontent.com/d/${id}=w1000`;
+                                            console.log('Trying fallback URL:', fallbackUrl);
+                                            (e.currentTarget as HTMLImageElement).src = fallbackUrl;
+                                          } else {
+                                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                          }
                                         }}
                                       />
                                     ) : (
@@ -1218,9 +1225,16 @@ export default function NewBookingPage() {
                                     alt={item.name}
                                     className="h-full w-full object-cover"
                                     onError={(e) => {
-                                      (
-                                        e.currentTarget as HTMLImageElement
-                                      ).style.display = 'none';
+                                      console.error('Image failed to load:', item.name, 'Original URL:', item.image, 'Processed URL:', image);
+                                      const match = item.image?.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                                      if (match?.[1]) {
+                                        const id = match[1];
+                                        const fallbackUrl = `https://lh3.googleusercontent.com/d/${id}=w1000`;
+                                        console.log('Trying fallback URL:', fallbackUrl);
+                                        (e.currentTarget as HTMLImageElement).src = fallbackUrl;
+                                      } else {
+                                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                      }
                                     }}
                                   />
                                 ) : (

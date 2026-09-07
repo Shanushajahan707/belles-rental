@@ -194,13 +194,14 @@ const getImageUrl = (img: string) => {
   if (!img) return '';
 
   if (img.includes('drive.google.com')) {
-    const id = img
-      .split('/file/d/')[1]
-      ?.split('/')[0];
-
-    if (id) {
-      // Use the direct preview URL which is more reliable
-      return `https://drive.google.com/uc?export=view&id=${id}`;
+    // Extract file ID from various Google Drive URL formats
+    const match = img.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match?.[1]) {
+      const id = match[1];
+      console.log('Extracted Google Drive ID:', id, 'from URL:', img);
+      
+      // Use the thumbnail format which is more reliable
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
     }
   }
 
@@ -1072,12 +1073,30 @@ const getImageUrl = (img: string) => {
                         alt={item.name}
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                         onLoad={(e) => {
-                          console.log('Image loaded successfully:', item.name);
+                          console.log('Image loaded successfully:', item.name, getImageUrl(item.image));
                         }}
                         onError={(e) => {
-                          console.error('Image failed to load:', item.name, item.image);
-                          e.currentTarget.src =
-                            'https://via.placeholder.com/600x700.png?text=Image+Not+Available';
+                          console.error('Image failed to load:', item.name, 'Original URL:', item.image, 'Processed URL:', getImageUrl(item.image));
+                          
+                          // Try alternative format
+                          const match = item.image.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                          if (match?.[1]) {
+                            const id = match[1];
+                            const fallbackUrl = `https://lh3.googleusercontent.com/d/${id}=w1000`;
+                            console.log('Trying fallback URL:', fallbackUrl);
+                            e.currentTarget.src = fallbackUrl;
+                          } else {
+                            // No Google Drive ID found, show fallback
+                            console.error('Could not extract Google Drive ID from:', item.image);
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) {
+                              const fallback = document.createElement('div');
+                              fallback.className = 'flex h-full w-full items-center justify-center';
+                              fallback.innerHTML = '<div class="text-7xl opacity-30">💎</div>';
+                              parent.appendChild(fallback);
+                            }
+                          }
                         }}
                       />
                     ) : (

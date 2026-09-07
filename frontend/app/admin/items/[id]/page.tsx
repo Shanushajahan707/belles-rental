@@ -188,6 +188,17 @@ export default function ItemDetailPage() {
     }
   };
 
+  const getImageUrl = (image: string) => {
+    if (!image) return '';
+    if (image.includes('drive.google.com')) {
+      const match = image.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match?.[1]) {
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+      }
+    }
+    return image;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -338,13 +349,20 @@ export default function ItemDetailPage() {
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.95),transparent_35%)]" />
                   {item.image ? (
                     <img
-                      src={item.image.includes('drive.google.com')
-                        ? `https://drive.google.com/thumbnail?id=${item.image.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
-                        : item.image}
+                      src={getImageUrl(item.image)}
                       alt={item.name}
                       className="relative h-full w-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/600x600.png?text=Image+Not+Available';
+                        console.error('Image failed to load:', item.name, 'Original URL:', item.image, 'Processed URL:', getImageUrl(item.image));
+                        const match = item.image.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                        if (match?.[1]) {
+                          const id = match[1];
+                          const fallbackUrl = `https://lh3.googleusercontent.com/d/${id}=w1000`;
+                          console.log('Trying fallback URL:', fallbackUrl);
+                          (e.currentTarget as HTMLImageElement).src = fallbackUrl;
+                        } else {
+                          (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/600x600.png?text=Image+Not+Available';
+                        }
                       }}
                     />
                   ) : (
