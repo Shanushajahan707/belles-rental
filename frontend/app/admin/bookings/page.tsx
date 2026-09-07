@@ -345,16 +345,16 @@ export default function BookingsManagement() {
           {/* Summary */}
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
             {[
-              ['All bookings', statusCounts.all, 'text-gray-950', 'bg-gray-950'],
-              ['Booked', statusCounts.booked, 'text-amber-700', 'bg-amber-500'],
-              ['Running', statusCounts.running, 'text-blue-700', 'bg-blue-500'],
-              ['Completed', statusCounts.completed, 'text-emerald-700', 'bg-emerald-500'],
-              ['Overdue', statusCounts.overdue, 'text-red-700', 'bg-red-500'],
-            ].map(([label, value, text, dot]) => (
-              <div key={label as string} className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm">
+              ['All bookings', statusCounts.all, 'text-[#21131d]', 'bg-[#21131d]', 'bg-gray-50'],
+              ['Booked', statusCounts.booked, 'text-amber-700', 'bg-amber-500', 'bg-amber-50'],
+              ['Running', statusCounts.running, 'text-blue-700', 'bg-blue-500', 'bg-blue-50'],
+              ['Completed', statusCounts.completed, 'text-emerald-700', 'bg-emerald-500', 'bg-emerald-50'],
+              ['Overdue', statusCounts.overdue, 'text-red-700', 'bg-red-500', 'bg-red-50'],
+            ].map(([label, value, text, dot, bg]) => (
+              <div key={label as string} className={`rounded-2xl border border-gray-200/80 ${bg} p-4 shadow-sm transition hover:shadow-md`}>
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${dot}`} />
-                  <p className="text-xs font-medium text-gray-500">{label}</p>
+                  <p className="text-xs font-medium text-gray-600">{label}</p>
                 </div>
                 <p className={`mt-2 text-2xl font-semibold tracking-tight ${text}`}>{value}</p>
               </div>
@@ -417,36 +417,36 @@ export default function BookingsManagement() {
             </div>
 
             {/* Mobile */}
-            <div className="md:hidden divide-y divide-gray-100">
+            <div className="md:hidden divide-y divide-purple-50">
               {filteredBookings.map((booking) => {
                 const status = statusConfig[booking.status] || statusConfig.booked;
                 return (
-                  <div key={booking._id} className="p-4 transition hover:bg-gray-50/70" onClick={() => handleViewDetails(booking)}>
+                  <div key={booking._id} className="p-4 transition hover:bg-purple-50/30" onClick={() => handleViewDetails(booking)}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-950">{booking.bookingNumber}</p>
-                        <p className="mt-1 truncate text-sm font-medium text-gray-700">{booking.customerName}</p>
-                        <p className="text-xs text-gray-400">{booking.phone}</p>
+                        <p className="font-semibold text-purple-950">{booking.bookingNumber}</p>
+                        <p className="mt-1 truncate text-sm font-medium text-purple-700">{booking.customerName}</p>
+                        <p className="text-xs text-purple-400">{booking.phone}</p>
                       </div>
                       <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.className}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} /> {status.label}
                       </span>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-gray-50 p-3">
-                      <div><p className="text-[10px] uppercase tracking-wider text-gray-400">Rental period</p><p className="mt-1 text-xs font-medium text-gray-700">{new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} — {new Date(booking.returnDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p></div>
-                      <div><p className="text-[10px] uppercase tracking-wider text-gray-400">Total</p><p className="mt-1 text-sm font-semibold text-gray-950">₹{booking.totalAmount}</p></div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-purple-50 p-3">
+                      <div><p className="text-[10px] uppercase tracking-wider text-purple-400">Rental period</p><p className="mt-1 text-xs font-medium text-purple-700">{new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} — {new Date(booking.returnDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wider text-purple-400">Total</p><p className="mt-1 text-sm font-semibold text-purple-950">₹{booking.totalAmount}</p></div>
                     </div>
 
                     <div className="mt-3">
-                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Jewellery</p>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-purple-400">Jewellery</p>
                       <div className="space-y-1">
                         {booking.items.map((item: any, index: number) => (
-                          <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
-                            <span className="font-semibold text-gray-800">{item.itemId?.itemCode || item.itemCode || 'N/A'}</span>
-                            <span className="text-gray-300">•</span>
+                          <div key={index} className="flex items-center gap-2 text-xs text-purple-600">
+                            <span className="font-semibold text-purple-800">{item.itemId?.itemCode || item.itemCode || 'N/A'}</span>
+                            <span className="text-purple-300">•</span>
                             <span className="truncate">{item.itemName || item.itemId?.name || 'Unknown Item'}</span>
-                            {item.priceType && <span className="shrink-0 rounded-md bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-500 border border-gray-100">{item.priceType === 'half' ? 'Half' : 'Full'}</span>}
+                            {item.priceType && <span className={`shrink-0 rounded-md bg-white px-1.5 py-0.5 text-[10px] font-medium border ${item.priceType === 'half' ? 'text-pink-600 border-pink-100' : 'text-purple-600 border-purple-100'}`}>{item.priceType === 'half' ? 'Half' : 'Full'}</span>}
                           </div>
                         ))}
                       </div>
@@ -461,7 +461,7 @@ export default function BookingsManagement() {
 
                     <div className="mt-4 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       {booking.status === 'booked' && <>
-                        <Link href={`/admin/bookings/${booking._id}/edit`} className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-center text-xs font-semibold text-gray-700">Edit</Link>
+                        <Link href={`/admin/bookings/${booking._id}/edit`} className="flex-1 rounded-xl border border-purple-200 bg-white px-3 py-2.5 text-center text-xs font-semibold text-purple-700">Edit</Link>
                         <button onClick={() => handleStartRental(booking._id)} className="flex-1 rounded-xl bg-blue-50 px-3 py-2.5 text-xs font-semibold text-blue-700">Start</button>
                         <button onClick={() => handleDeleteBooking(booking._id)} className="rounded-xl bg-red-50 p-2.5 text-red-600"><Trash2 className="h-4 w-4" /></button>
                       </>}
@@ -480,26 +480,26 @@ export default function BookingsManagement() {
             <div className="hidden md:block">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1100px]">
-                  <thead className="bg-[#faf9fb]">
-                    <tr className="border-b border-gray-100">
-                      {['#', 'Booking', 'Customer', 'Jewellery', 'Rental period', 'Amount', 'Status', 'Actions'].map((heading) => <th key={heading} className="px-4 py-3.5 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">{heading}</th>)}
+                  <thead className="bg-gradient-to-r from-purple-50 to-pink-50">
+                    <tr className="border-b border-purple-100">
+                      {['#', 'Booking', 'Customer', 'Jewellery', 'Rental period', 'Amount', 'Status', 'Actions'].map((heading) => <th key={heading} className="px-4 py-3.5 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-purple-900">{heading}</th>)}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-purple-50">
                     {filteredBookings.map((booking, index) => {
                       const status = statusConfig[booking.status] || statusConfig.booked;
                       return (
-                        <tr key={booking._id} onClick={() => handleViewDetails(booking)} className="cursor-pointer transition hover:bg-gray-50/80">
-                          <td className="px-4 py-4 text-xs font-semibold text-gray-400">{index + 1}</td>
-                          <td className="px-4 py-4"><p className="text-sm font-semibold text-gray-950">{booking.bookingNumber}</p><p className="mt-0.5 text-[11px] text-gray-400">{new Date(booking.createdAt).toLocaleDateString('en-IN')}</p></td>
-                          <td className="px-4 py-4"><p className="max-w-[150px] truncate text-sm font-medium text-gray-800">{booking.customerName}</p><p className="mt-0.5 text-xs text-gray-400">{booking.phone}</p></td>
-                          <td className="px-4 py-4"><div className="max-w-[280px] space-y-1">{booking.items.map((item: any, i: number) => <div key={i} className="flex items-center gap-1.5 text-xs"><span className="font-semibold text-gray-800">{item.itemId?.itemCode || item.itemCode || 'N/A'}</span><span className="text-gray-300">—</span><span className="truncate text-gray-500">{item.itemName || item.itemId?.name || 'Unknown Item'}</span>{item.priceType && <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold text-gray-500">{item.priceType === 'half' ? 'HALF' : 'FULL'}</span>}</div>)}</div></td>
-                          <td className="px-4 py-4"><p className="whitespace-nowrap text-xs font-medium text-gray-700">{new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p><p className="mt-1 whitespace-nowrap text-[11px] text-gray-400">to {new Date(booking.returnDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p></td>
-                          <td className="px-4 py-4"><p className="text-sm font-semibold text-gray-950">₹{booking.totalAmount}</p>{booking.additionalCharges && booking.additionalCharges > 0 ? <p className="mt-0.5 text-[10px] text-orange-600">+ ₹{booking.additionalCharges} charges</p> : null}</td>
+                        <tr key={booking._id} onClick={() => handleViewDetails(booking)} className="cursor-pointer transition hover:bg-purple-50/30">
+                          <td className="px-4 py-4 text-xs font-semibold text-purple-400">{index + 1}</td>
+                          <td className="px-4 py-4"><p className="text-sm font-semibold text-purple-950">{booking.bookingNumber}</p><p className="mt-0.5 text-[11px] text-purple-400">{new Date(booking.createdAt).toLocaleDateString('en-IN')}</p></td>
+                          <td className="px-4 py-4"><p className="max-w-[150px] truncate text-sm font-medium text-purple-800">{booking.customerName}</p><p className="mt-0.5 text-xs text-purple-400">{booking.phone}</p></td>
+                          <td className="px-4 py-4"><div className="max-w-[280px] space-y-1">{booking.items.map((item: any, i: number) => <div key={i} className="flex items-center gap-1.5 text-xs"><span className="font-semibold text-purple-800">{item.itemId?.itemCode || item.itemCode || 'N/A'}</span><span className="text-purple-300">—</span><span className="truncate text-purple-600">{item.itemName || item.itemId?.name || 'Unknown Item'}</span>{item.priceType && <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${item.priceType === 'half' ? 'bg-pink-100 text-pink-700' : 'bg-purple-100 text-purple-700'}`}>{item.priceType === 'half' ? 'HALF' : 'FULL'}</span>}</div>)}</div></td>
+                          <td className="px-4 py-4"><p className="whitespace-nowrap text-xs font-medium text-purple-700">{new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p><p className="mt-1 whitespace-nowrap text-[11px] text-purple-400">to {new Date(booking.returnDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p></td>
+                          <td className="px-4 py-4"><p className="text-sm font-semibold text-purple-950">₹{booking.totalAmount}</p>{booking.additionalCharges && booking.additionalCharges > 0 ? <p className="mt-0.5 text-[10px] text-orange-600">+ ₹{booking.additionalCharges} charges</p> : null}</td>
                           <td className="px-4 py-4"><span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${status.className}`}><span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />{status.label}</span></td>
                           <td className="px-4 py-4"><div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             {booking.status === 'booked' && <>
-                              <Link href={`/admin/bookings/${booking._id}/edit`} title="Edit booking" className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"><Edit className="h-4 w-4" /></Link>
+                              <Link href={`/admin/bookings/${booking._id}/edit`} title="Edit booking" className="rounded-lg p-2 text-purple-500 transition hover:bg-purple-100 hover:text-purple-900"><Edit className="h-4 w-4" /></Link>
                               <button onClick={() => handleStartRental(booking._id)} title="Start rental" className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"><Play className="h-4 w-4" /></button>
                               <button onClick={() => handleDeleteBooking(booking._id)} title="Delete booking" className="rounded-lg p-2 text-red-500 transition hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                             </>}
