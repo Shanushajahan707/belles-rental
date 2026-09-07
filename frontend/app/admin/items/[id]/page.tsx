@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, DollarSign, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, AlertTriangle, CheckCircle, Clock, Gem, Menu, X, Package, Receipt, LayoutDashboard } from 'lucide-react';
 
 interface RentalItem {
   _id: string;
@@ -55,6 +55,7 @@ export default function ItemDetailPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<ItemStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Calculate item-specific booking stats
   const calculateBookingStats = () => {
@@ -199,247 +200,359 @@ export default function ItemDetailPage() {
     return null;
   }
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/admin/items" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-              <ArrowLeft className="w-5 h-5" />
-              Back to Items
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Item Details</h1>
-            <div></div>
-          </div>
+    <div className="min-h-screen bg-[#faf8fb] text-gray-900">
+      {/* Mobile header */}
+      <header className="lg:hidden sticky top-0 z-40 border-b border-gray-200/80 bg-white/95 backdrop-blur-xl">
+        <div className="flex h-16 items-center justify-between px-4">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="rounded-xl p-2 text-gray-700 hover:bg-gray-100"
+            aria-label="Open navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <Link href="/admin/dashboard" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 text-white">
+              <Gem className="h-4 w-4" />
+            </span>
+            <span className="font-serif text-lg font-semibold">Belles Avenue</span>
+          </Link>
+          <div className="w-9" />
         </div>
-      </nav>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden h-fit">
-              <div className="h-64 bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
-                {item.image ? (
-                  <img
-                    src={item.image.includes('drive.google.com')
-                      ? `https://drive.google.com/thumbnail?id=${item.image.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
-                      : item.image
-                    }
-                    alt={item.name}
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/400x300.png?text=Image+Not+Available';
-                    }}
-                  />
-                ) : (
-                  <div className="text-8xl">💎</div>
-                )}
-              </div>
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-1">{item.name}</h2>
-                <p className="text-sm text-gray-500 mb-4">{item.category}</p>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-sm text-gray-600">Item Code</span>
-                    <span className="font-semibold text-gray-800 text-sm">{item.itemCode}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-sm text-gray-600">Barcode</span>
-                    <span className="font-semibold text-gray-800 text-sm">{item.barcode}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-sm text-gray-600">Purchase Price</span>
-                    <span className="font-semibold text-gray-800 text-sm">₹{item.purchasePrice?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-sm text-gray-600">Rent Price</span>
-                    <span className="font-semibold text-gray-800 text-sm">₹{item.rentPrice?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-sm text-gray-600">Security</span>
-                    <span className="font-semibold text-gray-800 text-sm">₹{item.securityDeposit?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm text-gray-600">Status</span>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </div>
+      {/* Mobile drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation"
+          />
+          <aside className="relative h-full w-[280px] max-w-[85vw] bg-[#171318] px-5 py-6 text-white shadow-2xl">
+            <div className="flex items-center justify-between">
+              <Link href="/admin/dashboard" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                  <Gem className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="font-serif text-lg font-semibold">Belles Avenue</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">Admin Studio</p>
                 </div>
+              </Link>
+              <button onClick={() => setMobileMenuOpen(false)} className="rounded-xl p-2 text-white/60 hover:bg-white/10 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="mt-10 space-y-2">
+              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">Workspace</p>
+              <Link href="/admin/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white/65 hover:bg-white/10 hover:text-white">
+                <LayoutDashboard className="h-4 w-4" /> Dashboard
+              </Link>
+              <Link href="/admin/bookings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white/65 hover:bg-white/10 hover:text-white">
+                <Calendar className="h-4 w-4" /> Bookings
+              </Link>
+              <Link href="/admin/items" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-3 text-sm font-medium text-white">
+                <Package className="h-4 w-4" /> Jewellery
+              </Link>
+              <Link href="/admin/invoices" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white/65 hover:bg-white/10 hover:text-white">
+                <Receipt className="h-4 w-4" /> Invoices
+              </Link>
+            </nav>
+          </aside>
+        </div>
+      )}
+
+      <div className="flex min-h-screen">
+        {/* Desktop sidebar */}
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-[#171318] px-5 py-7 text-white lg:flex lg:flex-col">
+          <Link href="/admin/dashboard" className="flex items-center gap-3 px-2">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+              <Gem className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-serif text-xl font-semibold tracking-tight">Belles Avenue</p>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">Admin Studio</p>
+            </div>
+          </Link>
+
+          <nav className="mt-12 space-y-2">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">Workspace</p>
+            <Link href="/admin/dashboard" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white/60 transition hover:bg-white/10 hover:text-white">
+              <LayoutDashboard className="h-4 w-4" /> Dashboard
+            </Link>
+            <Link href="/admin/bookings" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white/60 transition hover:bg-white/10 hover:text-white">
+              <Calendar className="h-4 w-4" /> Bookings
+            </Link>
+            <Link href="/admin/items" className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-3 text-sm font-medium text-white shadow-inner">
+              <Package className="h-4 w-4" /> Jewellery
+            </Link>
+            <Link href="/admin/invoices" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white/60 transition hover:bg-white/10 hover:text-white">
+              <Receipt className="h-4 w-4" /> Invoices
+            </Link>
+          </nav>
+
+          <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="text-xs font-medium text-white/80">Item details</p>
+            <p className="mt-1 text-xs leading-5 text-white/40">Review performance, rental history and profitability.</p>
+          </div>
+        </aside>
+
+        <main className="w-full lg:ml-64">
+          {/* Top bar */}
+          <div className="sticky top-0 z-20 hidden border-b border-gray-200/80 bg-white/90 backdrop-blur-xl lg:block">
+            <div className="flex h-[72px] items-center justify-between px-8 xl:px-10">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-400">Jewellery / Details</p>
+                <h1 className="mt-1 font-serif text-xl font-semibold text-gray-900">{item.itemCode}</h1>
               </div>
+              <Link href="/admin/items" className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Jewellery
+              </Link>
             </div>
           </div>
 
-          <div className="lg:col-span-2">
-            {bookingStats && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
-                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
-                  <div className="text-2xl font-bold text-gray-800">{bookingStats.totalBookings}</div>
-                  <div className="text-xs text-gray-600 mt-1">Total Bookings</div>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
-                  <div className="text-2xl font-bold text-blue-600">{bookingStats.activeBookings}</div>
-                  <div className="text-xs text-gray-600 mt-1">Active</div>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
-                  <div className="text-2xl font-bold text-green-600">{bookingStats.completedBookings}</div>
-                  <div className="text-xs text-gray-600 mt-1">Completed</div>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
-                  <div className="text-2xl font-bold text-red-600">{bookingStats.overdueBookings}</div>
-                  <div className="text-xs text-gray-600 mt-1">Overdue</div>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm p-3 border border-purple-100">
-                  <div className="text-2xl font-bold text-purple-600">₹{((itemEarnings || 0) + (item?.oldEarnings || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
-                  <div className="text-xs text-gray-600 mt-1">Item Earnings</div>
-                </div>
-                <div className={`bg-white rounded-lg shadow-sm p-3 border-2 ${profitAmount >= 0 ? 'border-green-200' : 'border-red-200'}`}>
-                  <div className={`text-2xl font-bold ${profitAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ₹{profitDisplay}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-1">{profitLabel}</div>
-                </div>
+          <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            {/* Page heading */}
+            <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <Link href="/admin/items" className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-gray-900 lg:hidden">
+                  <ArrowLeft className="h-4 w-4" /> Back to Jewellery
+                </Link>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Jewellery Profile</p>
+                <h2 className="mt-2 font-serif text-3xl font-medium tracking-tight text-gray-950 sm:text-4xl">{item.name}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">{item.category}</p>
               </div>
-            )}
+              <span className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold capitalize ${getStatusColor(item.status)}`}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {item.status.replace('_', ' ')}
+              </span>
+            </div>
 
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="p-6 border-b">
-                <h3 className="text-xl font-bold text-gray-800">Booking History</h3>
-              </div>
-
-              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                {bookings.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <div className="text-6xl mb-4">📋</div>
-                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No bookings yet</h3>
-                    <p className="text-gray-500">This item hasn't been rented yet</p>
+            {/* Item hero + stats */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+              <section className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white shadow-[0_12px_40px_rgba(30,20,35,0.06)]">
+                <div className="relative aspect-[4/4.2] overflow-hidden bg-gradient-to-br from-[#f7edf4] via-white to-[#eee8f5]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.95),transparent_35%)]" />
+                  {item.image ? (
+                    <img
+                      src={item.image.includes('drive.google.com')
+                        ? `https://drive.google.com/thumbnail?id=${item.image.split('/file/d/')[1]?.split('/')[0]}&sz=w1000`
+                        : item.image}
+                      alt={item.name}
+                      className="relative h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/600x600.png?text=Image+Not+Available';
+                      }}
+                    />
+                  ) : (
+                    <div className="relative flex h-full items-center justify-center">
+                      <Gem className="h-24 w-24 text-gray-300" strokeWidth={1} />
+                    </div>
+                  )}
+                </div>
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400">Item code</p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-gray-900">{item.itemCode}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400">Barcode</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-900">{item.barcode || '—'}</p>
+                    </div>
                   </div>
-                ) : (
-                  bookings.map((booking) => {
-                    // Find this specific item in the booking
-                    const bookingItem = booking.items?.find((bi: any) => bi.itemId === itemId || bi.itemId?._id === itemId);
 
-                    return (
-                      <div key={booking._id} className="p-6 hover:bg-gray-50 border-b last:border-b-0">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(booking.status)}
-                            <div>
-                              <h4 className="font-semibold text-gray-800">{booking.customerName}</h4>
-                              <p className="text-sm text-gray-600">{booking.phone}</p>
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl bg-gray-50 p-4">
+                      <p className="text-xs text-gray-500">Purchase</p>
+                      <p className="mt-1 text-lg font-semibold text-gray-900">₹{item.purchasePrice?.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className="rounded-2xl bg-gray-50 p-4">
+                      <p className="text-xs text-gray-500">Rent / day</p>
+                      <p className="mt-1 text-lg font-semibold text-gray-900">₹{item.rentPrice?.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className="col-span-2 rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
+                      <p className="text-xs text-amber-700">Security deposit</p>
+                      <p className="mt-1 text-lg font-semibold text-amber-900">₹{item.securityDeposit?.toLocaleString('en-IN')}</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                {bookingStats && (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {[
+                      { label: 'Total Bookings', value: bookingStats.totalBookings, icon: Calendar, tone: 'text-gray-900', bg: 'bg-gray-50' },
+                      { label: 'Active Rentals', value: bookingStats.activeBookings, icon: Clock, tone: 'text-blue-700', bg: 'bg-blue-50' },
+                      { label: 'Completed', value: bookingStats.completedBookings, icon: CheckCircle, tone: 'text-emerald-700', bg: 'bg-emerald-50' },
+                      { label: 'Overdue', value: bookingStats.overdueBookings, icon: AlertTriangle, tone: 'text-red-700', bg: 'bg-red-50' },
+                    ].map((stat) => (
+                      <div key={stat.label} className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5">
+                        <div className={`mb-5 flex h-9 w-9 items-center justify-center rounded-xl ${stat.bg}`}>
+                          <stat.icon className={`h-4 w-4 ${stat.tone}`} />
+                        </div>
+                        <p className={`text-2xl font-semibold tracking-tight ${stat.tone}`}>{stat.value}</p>
+                        <p className="mt-1 text-xs text-gray-500">{stat.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-400">Item earnings</p>
+                      <DollarSign className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">
+                      ₹{((itemEarnings || 0) + (item?.oldEarnings || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">Rental earnings including previous earnings</p>
+                  </div>
+
+                  <div className={`rounded-2xl border bg-white p-5 shadow-sm ${profitAmount >= 0 ? 'border-emerald-100' : 'border-red-100'}`}>
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-400">Purchase performance</p>
+                    <p className={`mt-3 text-3xl font-semibold tracking-tight ${profitAmount >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                      ₹{profitDisplay}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">{profitLabel}</p>
+                  </div>
+                </div>
+
+                {/* Booking history */}
+                <section className="mt-6 overflow-hidden rounded-3xl border border-gray-200/80 bg-white shadow-[0_12px_40px_rgba(30,20,35,0.05)]">
+                  <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-6">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">Rental activity</p>
+                      <h3 className="mt-1 font-serif text-2xl font-medium text-gray-900">Booking History</h3>
+                    </div>
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">{bookings.length} records</span>
+                  </div>
+
+                  <div className="max-h-[680px] divide-y divide-gray-100 overflow-y-auto">
+                    {bookings.length === 0 ? (
+                      <div className="p-12 text-center">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50">
+                          <Calendar className="h-6 w-6 text-gray-300" />
+                        </div>
+                        <h3 className="mt-4 text-base font-semibold text-gray-800">No bookings yet</h3>
+                        <p className="mt-1 text-sm text-gray-500">This item hasn't been rented yet.</p>
+                      </div>
+                    ) : (
+                      bookings.map((booking) => {
+                        const bookingItem = booking.items?.find((bi: any) => bi.itemId === itemId || bi.itemId?._id === itemId);
+
+                        return (
+                          <article key={booking._id} className="p-5 transition hover:bg-gray-50/70 sm:p-6">
+                            <div className="flex flex-col gap-4">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-50">
+                                    {getStatusIcon(booking.status)}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h4 className="truncate font-semibold text-gray-900">{booking.customerName}</h4>
+                                    <p className="mt-0.5 text-sm text-gray-500">{booking.phone}</p>
+                                    {bookingItem && (
+                                      <p className="mt-1 truncate text-xs text-gray-400">
+                                        {bookingItem.itemCode || item.itemCode} · {bookingItem.priceType === 'half' ? 'Half price' : 'Full price'}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold capitalize ${getStatusColor(booking.status)}`}>
+                                  {booking.status}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                {[
+                                  ['Start', booking.startDate],
+                                  ['Return', booking.returnDate],
+                                  ...(booking.actualReturnDate ? [['Actual return', booking.actualReturnDate]] : []),
+                                  ['Booked on', booking.createdAt],
+                                ].map(([label, value]) => (
+                                  <div key={label} className="rounded-xl bg-gray-50 px-3 py-2.5">
+                                    <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">{label}</p>
+                                    <p className="mt-1 text-xs font-semibold text-gray-700">
+                                      {new Date(value as string).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+
                               {bookingItem && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  {bookingItem.itemCode || 'Item Code'} - {bookingItem.itemName || 'Item'} ({bookingItem.priceType === 'half' ? 'Half' : 'Full'} Price)
-                                </p>
+                                <div className="grid grid-cols-3 gap-2 rounded-2xl border border-blue-100 bg-blue-50/50 p-3">
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-wider text-blue-500">Rent</p>
+                                    <p className="mt-1 text-sm font-semibold text-blue-900">₹{bookingItem.rentPrice?.toLocaleString('en-IN') || 0}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-wider text-blue-500">Security</p>
+                                    <p className="mt-1 text-sm font-semibold text-blue-900">₹{bookingItem.security?.toLocaleString('en-IN') || 0}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-wider text-blue-500">Price type</p>
+                                    <p className="mt-1 text-sm font-semibold text-blue-900">{bookingItem.priceType === 'half' ? 'Half' : 'Full'}</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 sm:grid-cols-2">
+                                <div>
+                                  <p className="text-xs font-medium text-gray-500">Booking rent</p>
+                                  <p className="mt-1 font-semibold text-gray-900">
+                                    ₹{booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0).toLocaleString('en-IN')}
+                                  </p>
+                                  {booking.rentDiscount > 0 && (
+                                    <p className="mt-1 text-xs text-red-500">-₹{booking.rentDiscount.toLocaleString('en-IN')} discount · Net ₹{(booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0) - booking.rentDiscount).toLocaleString('en-IN')}</p>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-xs font-medium text-gray-500">Booking security</p>
+                                  <p className="mt-1 font-semibold text-gray-900">
+                                    ₹{booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0).toLocaleString('en-IN')}
+                                  </p>
+                                  {booking.securityDiscount > 0 && (
+                                    <p className="mt-1 text-xs text-red-500">-₹{booking.securityDiscount.toLocaleString('en-IN')} discount · Net ₹{(booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0) - booking.securityDiscount).toLocaleString('en-IN')}</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {bookingItem && (booking.rentDiscount > 0 || booking.securityDiscount > 0) && (
+                                <div className="grid grid-cols-1 gap-3 rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:grid-cols-2">
+                                  <div>
+                                    <p className="text-xs font-medium text-amber-700">This item's rent discount share</p>
+                                    <p className="mt-1 font-semibold text-amber-900">-₹{((booking.rentDiscount || 0) / (booking.items?.length || 1)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-medium text-amber-700">This item's net earnings</p>
+                                    <p className="mt-1 font-semibold text-emerald-700">₹{((bookingItem.rentPrice || 0) - ((booking.rentDiscount || 0) / (booking.items?.length || 1))).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {booking.status === 'overdue' && (
+                                <div className="flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-medium text-red-700">
+                                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                                  This rental is overdue.
+                                </div>
                               )}
                             </div>
-                          </div>
-                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
-                            {booking.status}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
-                          <div>
-                            <span className="text-xs text-gray-500 block">Start Date</span>
-                            <p className="font-medium text-gray-800 text-sm">
-                              {new Date(booking.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-500 block">Return Date</span>
-                            <p className="font-medium text-gray-800 text-sm">
-                              {new Date(booking.returnDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                            </p>
-                          </div>
-                          {booking.actualReturnDate && (
-                            <div>
-                              <span className="text-xs text-gray-500 block">Actual Return</span>
-                              <p className="font-medium text-gray-800 text-sm">
-                                {new Date(booking.actualReturnDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                              </p>
-                            </div>
-                          )}
-                          <div>
-                            <span className="text-xs text-gray-500 block">Booking Date</span>
-                            <p className="font-medium text-gray-800 text-sm">
-                              {new Date(booking.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                            </p>
-                          </div>
-                        </div>
-
-                        {bookingItem && (
-                          <div className="grid grid-cols-3 gap-3 text-sm mb-3 p-3 bg-blue-50 rounded-lg">
-                            <div>
-                              <span className="text-xs text-gray-600 block">Rent Charged</span>
-                              <p className="font-semibold text-gray-800">₹{bookingItem.rentPrice?.toLocaleString() || 0}</p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-600 block">Security</span>
-                              <p className="font-semibold text-gray-800">₹{bookingItem.security?.toLocaleString() || 0}</p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-600 block">Price Type</span>
-                              <p className="font-semibold text-gray-800">{bookingItem.priceType === 'half' ? 'Half' : 'Full'}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Booking-level pricing with discounts */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="space-y-1">
-                            <span className="text-xs text-gray-600 block">Total Rent (Booking)</span>
-                            <p className="font-semibold text-gray-800">₹{booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0).toLocaleString()}</p>
-                            {booking.rentDiscount > 0 && (
-                              <>
-                                <p className="text-xs text-red-600">-₹{booking.rentDiscount?.toLocaleString()} discount</p>
-                                <p className="font-semibold text-green-700">Net: ₹{(booking.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0) - booking.rentDiscount).toLocaleString()}</p>
-                              </>
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-xs text-gray-600 block">Total Security (Booking)</span>
-                            <p className="font-semibold text-gray-800">₹{booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0).toLocaleString()}</p>
-                            {booking.securityDiscount > 0 && (
-                              <>
-                                <p className="text-xs text-red-600">-₹{booking.securityDiscount?.toLocaleString()} discount</p>
-                                <p className="font-semibold text-green-700">Net: ₹{(booking.items.reduce((sum: number, item: any) => sum + (item.security || 0), 0) - booking.securityDiscount).toLocaleString()}</p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Item-specific discount allocation */}
-                        {bookingItem && (booking.rentDiscount > 0 || booking.securityDiscount > 0) && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                            <div className="space-y-1">
-                              <span className="text-xs text-gray-600 block">This Item's Rent Discount Share</span>
-                              <p className="font-semibold text-orange-600">-₹{((booking.rentDiscount || 0) / (booking.items?.length || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
-                              <p className="text-xs text-gray-500">({booking.rentDiscount || 0} ÷ {booking.items?.length || 1} items)</p>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-xs text-gray-600 block">This Item's Net Earnings</span>
-                              <p className="font-semibold text-green-700">₹{((bookingItem.rentPrice || 0) - ((booking.rentDiscount || 0) / (booking.items?.length || 0))).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
-                              <p className="text-xs text-gray-500">({bookingItem.rentPrice || 0} - discount share)</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {booking.status === 'overdue' && (
-                          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-xs text-red-700 font-medium">
-                              ⚠️ This rental is overdue!
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                          </article>
+                        );
+                      })
+                    )}
+                  </div>
+                </section>
+              </section>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
