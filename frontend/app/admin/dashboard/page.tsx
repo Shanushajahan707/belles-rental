@@ -4,7 +4,28 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { DollarSign, ShoppingBag, Clock, AlertTriangle, LogOut, Package, Calendar, Users, FileText, Search, CheckCircle, XCircle, Info } from 'lucide-react';
+import {
+  DollarSign,
+  ShoppingBag,
+  Clock,
+  AlertTriangle,
+  LogOut,
+  Package,
+  Calendar,
+  Users,
+  FileText,
+  Search,
+  CheckCircle,
+  XCircle,
+  Info,
+  Gem,
+  LayoutDashboard,
+  Menu,
+  X,
+  ChevronRight,
+  TrendingUp,
+  Sparkles,
+} from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useToast } from '@/components/Toast';
 import { checkBackendHealthWithRedirect } from '@/lib/backendHealth';
@@ -52,6 +73,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [todayBookings, setTodayBookings] = useState<TodayBooking[]>([]);
   const [loadingTodayBookings, setLoadingTodayBookings] = useState(true);
@@ -294,8 +316,14 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8fb]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 shadow-lg shadow-pink-200">
+            <Gem className="h-7 w-7 text-white" />
+          </div>
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-pink-200 border-t-pink-600" />
+          <p className="text-sm font-medium text-gray-500">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -308,331 +336,668 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50">
-      <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Belles Avenue</h1>
-              <p className="text-sm text-gray-600">Admin Dashboard</p>
-            </div>
+    <div className="min-h-screen bg-[#f8f6f9] text-gray-900">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <button
+          aria-label="Close navigation"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm lg:hidden"
+        />
+      )}
 
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <button
-                onClick={() => setShowAvailabilityModal(true)}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Check Availability</span>
-              </button>
-              <Link href="/admin/invoices" className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 transform hover:scale-105 text-sm font-medium">
-                <FileText className="w-4 h-4 inline" />
-                <span className="hidden sm:inline ml-1">Manage Invoices</span>
-              </Link>
-              <Link
-                href="/admin/items"
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:shadow-lg hover:shadow-pink-500/30 transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-              >
-                <Package className="w-4 h-4" />
-                <span className="hidden sm:inline">Manage Items</span>
-              </Link>
-              <Link
-                href="/admin/bookings"
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-              >
-                <Calendar className="w-4 h-4" />
-                <span className="hidden sm:inline">Bookings</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 rounded-xl hover:shadow-lg hover:shadow-gray-400/30 transition-all duration-300 transform hover:scale-105 text-sm font-medium"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
+      {/* =========================================================
+          SIDEBAR
+      ========================================================= */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[270px] flex-col border-r border-white/10 bg-[#21131d] text-white shadow-2xl transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
+          <Link
+            href="/admin/dashboard"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-purple-500 shadow-lg shadow-pink-950/30">
+              <Gem className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="font-serif text-lg font-semibold tracking-wide">
+                Belles Avenue
+              </p>
+              <p className="text-[9px] uppercase tracking-[0.25em] text-pink-200/70">
+                Admin Portal
+              </p>
+            </div>
+          </Link>
+
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 px-4 py-7">
+          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
+            Workspace
+          </p>
+
+          <nav className="space-y-1">
+            <Link
+              href="/admin/dashboard"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-pink-500/20 to-purple-500/10 px-3 py-3 text-sm font-semibold text-white ring-1 ring-inset ring-pink-300/10"
+            >
+              <LayoutDashboard className="h-4.5 w-4.5 text-pink-300" />
+              Dashboard
+            </Link>
+
+            <Link
+              href="/admin/bookings"
+              onClick={() => setSidebarOpen(false)}
+              className="group flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-white/65 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <span className="flex items-center gap-3">
+                <Calendar className="h-4.5 w-4.5" />
+                Bookings
+              </span>
+              <ChevronRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+            </Link>
+
+            <Link
+              href="/admin/items"
+              onClick={() => setSidebarOpen(false)}
+              className="group flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-white/65 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <span className="flex items-center gap-3">
+                <Package className="h-4.5 w-4.5" />
+                Jewellery
+              </span>
+              <ChevronRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+            </Link>
+
+            <Link
+              href="/admin/invoices"
+              onClick={() => setSidebarOpen(false)}
+              className="group flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-white/65 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <span className="flex items-center gap-3">
+                <FileText className="h-4.5 w-4.5" />
+                Invoices
+              </span>
+              <ChevronRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+            </Link>
+
+            <button
+              onClick={() => {
+                setShowAvailabilityModal(true);
+                setSidebarOpen(false);
+              }}
+              className="group flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-medium text-white/65 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <span className="flex items-center gap-3">
+                <CheckCircle className="h-4.5 w-4.5" />
+                Availability
+              </span>
+              <ChevronRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+            </button>
+          </nav>
+        </div>
+
+        <div className="border-t border-white/10 p-4">
+          <div className="mb-3 rounded-2xl bg-white/5 p-4">
+            <p className="text-xs font-semibold text-white/80">Store status</p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-xs text-white/50">Management portal active</span>
             </div>
           </div>
-        </div>
-      </nav>
 
-      {stats.overdue > 0 && (
-        <div className="max-w-7xl mx-auto px-4 pb-6">
-          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-2xl p-6 mb-6 shadow-lg shadow-red-200/50">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-xl">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="text-xl font-bold text-red-800">Overdue Returns ({stats.overdueBookings.filter(b =>
-                  b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
-                  b.phone.includes(searchOverdue)
-                ).length})</h3>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search by name or phone..."
-                  value={searchOverdue}
-                  onChange={(e) => setSearchOverdue(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-red-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm w-full sm:w-64"
-                />
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-white/60 transition-colors hover:bg-red-500/10 hover:text-red-300"
+          >
+            <LogOut className="h-4.5 w-4.5" />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* =========================================================
+          MAIN AREA
+      ========================================================= */}
+      <div className="min-h-screen lg:pl-[270px]">
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/90 backdrop-blur-xl">
+          <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-600 shadow-sm hover:border-pink-200 hover:text-pink-600 lg:hidden"
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-pink-500">
+                  Management
+                </p>
+                <h1 className="font-serif text-xl font-semibold text-gray-900 sm:text-2xl">
+                  Dashboard
+                </h1>
               </div>
             </div>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {stats.overdueBookings.filter(b =>
-                b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
-                b.phone.includes(searchOverdue)
-              ).map((booking) => (
-                <div key={booking._id} className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-800">{booking.customerName}</p>
-                      <p className="text-sm text-gray-600">{booking.phone}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Due: {new Date(booking.returnDate).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </p>
+
+          </div>
+
+          {/* Mobile quick actions */}
+          <div className="flex gap-2 overflow-x-auto border-t border-gray-100 px-4 py-3 sm:hidden">
+            <button
+              onClick={() => setShowAvailabilityModal(true)}
+              className="shrink-0 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"
+            >
+              Availability
+            </button>
+            <Link
+              href="/admin/bookings"
+              className="shrink-0 rounded-lg bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700"
+            >
+              Bookings
+            </Link>
+            <Link
+              href="/admin/items"
+              className="shrink-0 rounded-lg bg-pink-50 px-3 py-2 text-xs font-semibold text-pink-700"
+            >
+              Jewellery
+            </Link>
+            <Link
+              href="/admin/invoices"
+              className="shrink-0 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
+            >
+              Invoices
+            </Link>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          {/* Welcome */}
+          <section className="mb-7 flex flex-col justify-between gap-5 rounded-3xl bg-gradient-to-br from-[#2a1724] via-[#3a1c31] to-[#241329] p-6 text-white shadow-xl shadow-pink-100/40 sm:p-8 lg:flex-row lg:items-center">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-pink-100">
+                <Sparkles className="h-3.5 w-3.5" />
+                Belles Avenue Management
+              </div>
+              <h2 className="font-serif text-3xl leading-tight sm:text-4xl">
+                Good afternoon, Admin
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-white/55">
+                Here&apos;s what&apos;s happening with your jewellery rentals today.
+              </p>
+            </div>
+
+            <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-5 lg:block">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/40">
+                Today
+              </p>
+              <p className="mt-1 text-lg font-semibold">
+                {new Date().toLocaleDateString('en-IN', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'short',
+                })}
+              </p>
+            </div>
+          </section>
+
+          {/* KPI cards */}
+          <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                label: 'Total Bookings',
+                value: stats.totalBookings,
+                note: 'All rental bookings',
+                icon: ShoppingBag,
+                box: 'bg-blue-50',
+                iconColor: 'text-blue-600',
+              },
+              {
+                label: 'Active Rentals',
+                value: stats.activeRentals,
+                note: 'Currently rented',
+                icon: Clock,
+                box: 'bg-purple-50',
+                iconColor: 'text-purple-600',
+              },
+              {
+                label: 'Due Today',
+                value: stats.dueToday,
+                note: 'Returns expected today',
+                icon: Calendar,
+                box: 'bg-amber-50',
+                iconColor: 'text-amber-600',
+              },
+              {
+                label: 'Overdue',
+                value: stats.overdue,
+                note: stats.overdue > 0 ? 'Needs attention' : 'Everything on track',
+                icon: AlertTriangle,
+                box: stats.overdue > 0 ? 'bg-red-50' : 'bg-emerald-50',
+                iconColor: stats.overdue > 0 ? 'text-red-600' : 'text-emerald-600',
+              },
+            ].map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.label}
+                  className="group rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className={`rounded-xl p-3 ${card.box}`}>
+                      <Icon className={`h-5 w-5 ${card.iconColor}`} />
                     </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-gradient-to-r from-red-100 to-rose-100 text-red-800 rounded-full text-sm font-semibold shadow-sm">
+                    <TrendingUp className="h-4 w-4 text-gray-200 transition-colors group-hover:text-pink-300" />
+                  </div>
+                  <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    {card.label}
+                  </p>
+                  <p className="mt-1 text-3xl font-bold tracking-tight text-gray-900">
+                    {card.value}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">{card.note}</p>
+                </div>
+              );
+            })}
+          </section>
+
+          {/* Attention panels */}
+          <div className="space-y-5">
+            {stats.overdue > 0 && (
+              <section className="rounded-2xl border border-red-200 bg-red-50/70 p-5 shadow-sm sm:p-6">
+                <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-red-100 p-2.5">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-red-900">
+                        Overdue Returns ({stats.overdueBookings.filter((b) =>
+                          b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
+                          b.phone.includes(searchOverdue)
+                        ).length})
+                      </h3>
+                      <p className="text-xs text-red-700/70">These bookings need attention.</p>
+                    </div>
+                  </div>
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search name or phone..."
+                      value={searchOverdue}
+                      onChange={(e) => setSearchOverdue(e.target.value)}
+                      className="w-full rounded-xl border border-red-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {stats.overdueBookings.filter((b) =>
+                    b.customerName.toLowerCase().includes(searchOverdue.toLowerCase()) ||
+                    b.phone.includes(searchOverdue)
+                  ).map((booking) => (
+                    <div
+                      key={booking._id}
+                      className="flex flex-col gap-3 rounded-xl border border-red-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">{booking.customerName}</p>
+                        <p className="text-xs text-gray-500">{booking.phone}</p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          Due:{' '}
+                          {new Date(booking.returnDate).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </p>
+                      </div>
+                      <span className="w-fit rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
                         Overdue
                       </span>
                     </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {showTodayBookingAlert && (
+              <section className="rounded-2xl border border-orange-200 bg-orange-50/70 p-5 shadow-sm sm:p-6">
+                <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-orange-100 p-2.5">
+                      <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-orange-900">
+                        Today&apos;s Bookings — Not Arrived ({todayBookings.filter((b) =>
+                          b.customerName.toLowerCase().includes(searchTodayBookings.toLowerCase()) ||
+                          b.phone.includes(searchTodayBookings)
+                        ).length})
+                      </h3>
+                      <p className="text-xs text-orange-700/70">Customers scheduled for today.</p>
+                    </div>
+                  </div>
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search name or phone..."
+                      value={searchTodayBookings}
+                      onChange={(e) => setSearchTodayBookings(e.target.value)}
+                      className="w-full rounded-xl border border-orange-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {showTodayBookingAlert && (
-        <div className="max-w-7xl mx-auto px-4 pt-6">
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6 mb-6 shadow-lg shadow-orange-200/50">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-xl">
-                  <AlertTriangle className="w-6 h-6 text-orange-600" />
-                </div>
-                <h3 className="text-xl font-bold text-orange-800">
-                  Today's Bookings: Customer Not Arrived ({todayBookings.filter(b =>
+                <div className="space-y-2.5">
+                  {todayBookings.filter((b) =>
                     b.customerName.toLowerCase().includes(searchTodayBookings.toLowerCase()) ||
                     b.phone.includes(searchTodayBookings)
-                  ).length})
-                </h3>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search by name or phone..."
-                  value={searchTodayBookings}
-                  onChange={(e) => setSearchTodayBookings(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm w-full sm:w-64"
-                />
-              </div>
-            </div>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {todayBookings.filter(b =>
-                b.customerName.toLowerCase().includes(searchTodayBookings.toLowerCase()) ||
-                b.phone.includes(searchTodayBookings)
-              ).map((booking) => (
-                <div key={booking._id} className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-800">{booking.customerName}</p>
-                      <p className="text-sm text-gray-600">{booking.phone}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Start: {new Date(booking.startDate).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Items: {booking.items.map((i: any) => (
-                          <span key={i.itemCode} className="inline-flex items-center gap-1 mr-3">
-                            {i.itemName} ({i.itemCode})
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${i.priceType === 'half' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                              }`}>
-                              {i.priceType === 'half' ? 'Half' : 'Full'}
-                            </span>
-                          </span>
-                        ))}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 rounded-full text-sm font-semibold shadow-sm">
-                        Not Arrived
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {stats.dueToday > 0 && (
-        <div className="max-w-7xl mx-auto px-4 pt-6">
-          <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6 mb-6 shadow-lg shadow-yellow-200/50">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-xl">
-                  <Clock className="w-6 h-6 text-yellow-600" />
-                </div>
-                <h3 className="text-xl font-bold text-yellow-800">Due Today ({stats.dueTodayBookings.filter(b =>
-                  b.customerName.toLowerCase().includes(searchDueToday.toLowerCase()) ||
-                  b.phone.includes(searchDueToday)
-                ).length})</h3>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search by name or phone..."
-                  value={searchDueToday}
-                  onChange={(e) => setSearchDueToday(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-yellow-200 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm w-full sm:w-64"
-                />
-              </div>
-            </div>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {stats.dueTodayBookings.filter(b =>
-                b.customerName.toLowerCase().includes(searchDueToday.toLowerCase()) ||
-                b.phone.includes(searchDueToday)
-              ).map((booking) => {
-                const totalSecurity = booking.items?.reduce((sum: number, item: any) => sum + (item.security || 0), 0) || 0;
-                const securityDiscount = booking.securityDiscount || 0;
-                const returnableAmount = totalSecurity - securityDiscount;
-                return (
-                  <div key={booking._id} className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-800">{booking.customerName}</p>
-                        <p className="text-sm text-gray-600">{booking.phone}</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Due: {new Date(booking.returnDate).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </p>
-                        <div className="mt-2 bg-green-50 rounded-lg p-2">
-                          <p className="text-xs text-green-600 font-medium">Returnable Amount</p>
-                          <p className="text-sm font-bold text-green-700">₹{returnableAmount}</p>
-                          <p className="text-xs text-green-600">if no damage</p>
+                  ).map((booking) => (
+                    <div
+                      key={booking._id}
+                      className="rounded-xl border border-orange-100 bg-white p-4"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">{booking.customerName}</p>
+                          <p className="text-xs text-gray-500">{booking.phone}</p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            Start:{' '}
+                            {new Date(booking.startDate).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {booking.items.map((i: any) => (
+                              <span
+                                key={i.itemCode}
+                                className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2.5 py-1.5 text-xs text-gray-600"
+                              >
+                                {i.itemName} ({i.itemCode})
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                                    i.priceType === 'half'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-blue-100 text-blue-700'
+                                  }`}
+                                >
+                                  {i.priceType === 'half' ? 'Half' : 'Full'}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right ml-4">
-                        <span className="px-3 py-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 rounded-full text-sm font-semibold shadow-sm">
-                          Due Today
+                        <span className="w-fit rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                          Not Arrived
                         </span>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {stats.dueToday > 0 && (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm sm:p-6">
+                <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-amber-100 p-2.5">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-amber-900">
+                        Due Today ({stats.dueTodayBookings.filter((b) =>
+                          b.customerName.toLowerCase().includes(searchDueToday.toLowerCase()) ||
+                          b.phone.includes(searchDueToday)
+                        ).length})
+                      </h3>
+                      <p className="text-xs text-amber-700/70">Returns expected today.</p>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search name or phone..."
+                      value={searchDueToday}
+                      onChange={(e) => setSearchDueToday(e.target.value)}
+                      className="w-full rounded-xl border border-amber-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {stats.dueTodayBookings.filter((b) =>
+                    b.customerName.toLowerCase().includes(searchDueToday.toLowerCase()) ||
+                    b.phone.includes(searchDueToday)
+                  ).map((booking) => {
+                    const totalSecurity =
+                      booking.items?.reduce(
+                        (sum: number, item: any) => sum + (item.security || 0),
+                        0
+                      ) || 0;
+                    const securityDiscount = booking.securityDiscount || 0;
+                    const returnableAmount = totalSecurity - securityDiscount;
+
+                    return (
+                      <div
+                        key={booking._id}
+                        className="flex flex-col gap-4 rounded-xl border border-amber-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <p className="font-semibold text-gray-900">{booking.customerName}</p>
+                          <p className="text-xs text-gray-500">{booking.phone}</p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            Due:{' '}
+                            {new Date(booking.returnDate).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                          <div className="rounded-xl bg-emerald-50 px-4 py-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
+                              Returnable
+                            </p>
+                            <p className="text-sm font-bold text-emerald-700">
+                              ₹{returnableAmount.toLocaleString()}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                            Due Today
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
           </div>
-        </div>
-      )}
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-6">Dashboard Overview</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
-          <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-6 border border-white/50">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl">
-                <ShoppingBag className="w-6 h-6 text-blue-600" />
+          {/* =====================================================
+              BOOKING OVERVIEW + QUICK ACTIONS
+          ===================================================== */}
+          <section className="mt-8 grid grid-cols-1 gap-5 xl:grid-cols-12">
+            <div className="rounded-3xl border border-gray-200/80 bg-white p-5 shadow-sm sm:p-6 xl:col-span-8">
+              <div className="mb-5 flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-500">
+                    Performance
+                  </p>
+                  <h3 className="mt-1 font-serif text-2xl text-gray-900">
+                    Booking Overview
+                  </h3>
+                </div>
+                <div className="rounded-xl bg-purple-50 p-2.5">
+                  <ShoppingBag className="h-5 w-5 text-purple-600" />
+                </div>
               </div>
-              <span className="text-sm text-gray-500 font-medium">Total Bookings</span>
-            </div>
-            <p className="text-3xl font-bold text-gray-800">{stats.totalBookings}</p>
-          </div>
 
-          <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-6 border border-white/50">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl">
-                <Clock className="w-6 h-6 text-purple-600" />
+              <div className="h-[280px] w-full sm:h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      { name: 'Total', value: stats.totalBookings },
+                      { name: 'Active', value: stats.activeRentals },
+                      { name: 'Due Today', value: stats.dueToday },
+                      { name: 'Overdue', value: stats.overdue },
+                    ]}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee8ee" vertical={false} />
+                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                    <YAxis stroke="#9ca3af" fontSize={12} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255,255,255,.97)',
+                        borderRadius: '14px',
+                        border: '1px solid #f1e5ed',
+                        boxShadow: '0 12px 30px rgba(60,20,50,.12)',
+                      }}
+                    />
+                    <Bar dataKey="value" fill="url(#dashboardBarGradient)" radius={[8, 8, 0, 0]} />
+                    <defs>
+                      <linearGradient id="dashboardBarGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#a855f7" />
+                        <stop offset="100%" stopColor="#ec4899" />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <span className="text-sm text-gray-500 font-medium">Active Rentals</span>
             </div>
-            <p className="text-3xl font-bold text-gray-800">{stats.activeRentals}</p>
-          </div>
 
-          <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-6 border border-white/50">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-xl">
-                <Users className="w-6 h-6 text-yellow-600" />
+            <div className="rounded-3xl border border-gray-200/80 bg-white p-5 shadow-sm sm:p-6 xl:col-span-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-500">
+                Shortcuts
+              </p>
+              <h3 className="mt-1 font-serif text-2xl text-gray-900">
+                Quick Actions
+              </h3>
+
+              <div className="mt-5 space-y-3">
+                <button
+                  onClick={() => setShowAvailabilityModal(true)}
+                  className="group flex w-full items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="rounded-xl bg-emerald-100 p-2.5">
+                      <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-900">Check Availability</span>
+                      <span className="block text-xs text-gray-500">Check jewellery dates</span>
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-1" />
+                </button>
+
+                <Link
+                  href="/admin/items"
+                  className="group flex items-center justify-between rounded-2xl border border-pink-100 bg-pink-50/70 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="rounded-xl bg-pink-100 p-2.5">
+                      <Package className="h-5 w-5 text-pink-600" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-900">Manage Jewellery</span>
+                      <span className="block text-xs text-gray-500">Add and manage items</span>
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-1" />
+                </Link>
+
+                <Link
+                  href="/admin/bookings"
+                  className="group flex items-center justify-between rounded-2xl border border-purple-100 bg-purple-50/70 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="rounded-xl bg-purple-100 p-2.5">
+                      <Calendar className="h-5 w-5 text-purple-600" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-900">View Bookings</span>
+                      <span className="block text-xs text-gray-500">Manage rental orders</span>
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-1" />
+                </Link>
+
+                <Link
+                  href="/admin/invoices"
+                  className="group flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/70 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="rounded-xl bg-blue-100 p-2.5">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-900">Manage Invoices</span>
+                      <span className="block text-xs text-gray-500">View billing documents</span>
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-1" />
+                </Link>
               </div>
-              <span className="text-sm text-gray-500 font-medium">Due Today</span>
             </div>
-            <p className="text-3xl font-bold text-gray-800">{stats.dueToday}</p>
-          </div>
-        </div>
+          </section>
 
-        {/* Charts Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-white/50 mb-8">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Booking Overview</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={[
-              { name: 'Total', value: stats.totalBookings },
-              { name: 'Active', value: stats.activeRentals },
-              { name: 'Due Today', value: stats.dueToday },
-              { name: 'Overdue', value: stats.overdue }
-            ]}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(139, 92, 246, 0.2)',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#1f2937'
-                }}
-                cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
-                itemStyle={{ color: '#6b7280', fontSize: '13px' }}
-                labelStyle={{ color: '#1f2937', fontWeight: '600', fontSize: '14px', marginBottom: '4px' }}
-                formatter={(value: any) => [
-                  <span className="font-semibold text-purple-600">{value}</span>,
-                  <span className="text-gray-600">Bookings</span>
-                ]}
-              />
-              <Bar dataKey="value" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="100%" stopColor="#ec4899" />
-                </linearGradient>
-              </defs>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+          {/* =====================================================
+              MONTHLY EARNINGS
+          ===================================================== */}
+          <section className="mt-8 rounded-3xl border border-gray-200/80 bg-white p-5 shadow-sm sm:p-7">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-500">
+                  Revenue
+                </p>
+                <h3 className="mt-1 font-serif text-2xl text-gray-900">
+                  Monthly Earnings
+                </h3>
+                <p className="mt-1 text-xs text-gray-400">
+                  Financial summary for the selected month.
+                </p>
+              </div>
 
-        {/* Monthly Earnings Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-white/50 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <h3 className="text-lg font-bold text-gray-800">Monthly Earnings</h3>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Year:</label>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                 <select
                   value={selectedMonth.getFullYear().toString()}
-                  onChange={(e) => setSelectedMonth(new Date(parseInt(e.target.value), selectedMonth.getMonth(), 1))}
-                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white text-black"
+                  onChange={(e) =>
+                    setSelectedMonth(
+                      new Date(parseInt(e.target.value), selectedMonth.getMonth(), 1)
+                    )
+                  }
+                  className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-pink-300 focus:ring-4 focus:ring-pink-50"
                 >
                   {Array.from({ length: 10 }, (_, i) => {
                     const year = new Date().getFullYear() - 5 + i;
@@ -643,13 +1008,19 @@ export default function AdminDashboard() {
                     );
                   })}
                 </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Month:</label>
+
                 <select
                   value={selectedMonth.getMonth().toString()}
-                  onChange={(e) => setSelectedMonth(new Date(selectedMonth.getFullYear(), parseInt(e.target.value), 1))}
-                  className="px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white text-black"
+                  onChange={(e) =>
+                    setSelectedMonth(
+                      new Date(
+                        selectedMonth.getFullYear(),
+                        parseInt(e.target.value),
+                        1
+                      )
+                    )
+                  }
+                  className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-pink-300 focus:ring-4 focus:ring-pink-50"
                 >
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i} value={i.toString()}>
@@ -658,135 +1029,189 @@ export default function AdminDashboard() {
                   ))}
                 </select>
               </div>
-              <span className="text-sm text-black font-medium">
-                ({selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' })})
-              </span>
             </div>
-          </div>
 
-          {loadingMonthlyEarnings ? (
-            <div className="text-center py-8">
-              <div className="text-xl">Loading earnings data...</div>
+            <div className="mt-6 rounded-2xl bg-gradient-to-r from-pink-50 via-white to-purple-50 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Selected period
+              </p>
+              <p className="mt-1 font-serif text-2xl text-gray-900">
+                {selectedMonth.toLocaleString('default', {
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </p>
             </div>
-          ) : monthlyEarnings ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-                  <p className="text-sm text-green-600 font-medium mb-1">Total Rent</p>
-                  <p className="text-2xl font-bold text-green-800">₹{monthlyEarnings.totalRent.toLocaleString()}</p>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
-                  <p className="text-sm text-blue-600 font-medium mb-1">Total Security</p>
-                  <p className="text-2xl font-bold text-blue-800">₹{monthlyEarnings.totalSecurity.toLocaleString()}</p>
-                </div>
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border border-orange-100">
-                  <p className="text-sm text-orange-600 font-medium mb-1">Rent Discount</p>
-                  <p className="text-2xl font-bold text-orange-800">-₹{monthlyEarnings.totalRentDiscount.toLocaleString()}</p>
-                </div>
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-100">
-                  <p className="text-sm text-purple-600 font-medium mb-1">Net Earnings</p>
-                  <p className="text-2xl font-bold text-purple-800">₹{monthlyEarnings.netEarnings.toLocaleString()}</p>
-                </div>
+
+            {loadingMonthlyEarnings ? (
+              <div className="grid grid-cols-1 gap-4 py-6 sm:grid-cols-2 lg:grid-cols-4">
+                {[1, 2, 3, 4].map((item) => (
+                  <div key={item} className="h-28 animate-pulse rounded-2xl bg-gray-100" />
+                ))}
               </div>
-
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-purple-600 font-medium">Total Bookings</p>
-                    <p className="text-3xl font-bold text-purple-800">{monthlyEarnings.totalBookings}</p>
-                    <div className="flex gap-4 mt-2">
-                      <div>
-                        <p className="text-xs text-green-600">Completed: {monthlyEarnings.completedBookings}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-orange-600">Pending: {monthlyEarnings.pendingBookings}</p>
-                      </div>
-                    </div>
+            ) : monthlyEarnings ? (
+              <>
+                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Total Rent</p>
+                    <p className="mt-2 text-2xl font-bold text-emerald-800">
+                      ₹{monthlyEarnings.totalRent.toLocaleString()}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Earnings Calculation:</p>
-                    <p className="text-sm text-gray-700">Total Rent - Rent Discount = Net Earnings</p>
-                    <p className="text-sm text-gray-700">₹{monthlyEarnings.totalRent.toLocaleString()} - ₹{monthlyEarnings.totalRentDiscount.toLocaleString()} = ₹{monthlyEarnings.netEarnings.toLocaleString()}</p>
+
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Total Security</p>
+                    <p className="mt-2 text-2xl font-bold text-blue-800">
+                      ₹{monthlyEarnings.totalSecurity.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-orange-100 bg-orange-50 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">Rent Discount</p>
+                    <p className="mt-2 text-2xl font-bold text-orange-800">
+                      -₹{monthlyEarnings.totalRentDiscount.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-purple-600">Net Earnings</p>
+                    <p className="mt-2 text-2xl font-bold text-purple-800">
+                      ₹{monthlyEarnings.netEarnings.toLocaleString()}
+                    </p>
                   </div>
                 </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5 lg:col-span-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Bookings</p>
+                    <p className="mt-1 text-3xl font-bold text-gray-900">
+                      {monthlyEarnings.totalBookings}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        Completed {monthlyEarnings.completedBookings}
+                      </span>
+                      <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                        Pending {monthlyEarnings.pendingBookings}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-pink-100 bg-pink-50/60 p-5 lg:col-span-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-pink-500">
+                      Earnings Calculation
+                    </p>
+                    <p className="mt-3 text-sm text-gray-600">
+                      Total Rent − Rent Discount = Net Earnings
+                    </p>
+                    <p className="mt-2 break-words text-lg font-semibold text-gray-900">
+                      ₹{monthlyEarnings.totalRent.toLocaleString()} − ₹
+                      {monthlyEarnings.totalRentDiscount.toLocaleString()} = ₹
+                      {monthlyEarnings.netEarnings.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="py-10 text-center text-sm text-gray-400">
+                No earnings data for this month.
+              </div>
+            )}
+          </section>
+
+          {/* =====================================================
+              MOST BOOKED
+          ===================================================== */}
+          <section className="mt-8 rounded-3xl border border-gray-200/80 bg-white p-5 shadow-sm sm:p-7">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-500">
+                  Popularity
+                </p>
+                <h3 className="mt-1 font-serif text-2xl text-gray-900">
+                  Most Booked Jewellery
+                </h3>
+              </div>
+              <div className="hidden rounded-xl bg-amber-50 p-2.5 sm:block">
+                <Gem className="h-5 w-5 text-amber-500" />
               </div>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No earnings data for this month</p>
-            </div>
-          )}
-        </div>
 
-        {/* Most Booked Items Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-white/50 mb-8">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Most Booked Items of the Month</h3>
-          {loadingMostBookedItems ? (
-            <div className="text-center py-8">
-              <div className="text-xl">Loading most booked items...</div>
-            </div>
-          ) : mostBookedItems.length > 0 ? (
-            <div className="space-y-3">
-              {mostBookedItems.map((item, index) => (
-                <Link
-                  key={item.itemCode}
-                  href={`/admin/items/${item._id}`}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 hover:shadow-lg cursor-pointer ${
-                    index === 0
-                      ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 hover:from-yellow-100 hover:to-amber-100'
-                      : index === 1
-                      ? 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200 hover:from-gray-100 hover:to-slate-100'
-                      : index === 2
-                      ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200 hover:from-orange-100 hover:to-amber-100'
-                      : 'bg-white border-gray-100 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                        index === 0
-                          ? 'bg-yellow-400 text-white'
-                          : index === 1
-                          ? 'bg-gray-400 text-white'
-                          : index === 2
-                          ? 'bg-orange-400 text-white'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}
-                    >
-                      {index + 1}
+            {loadingMostBookedItems ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="h-16 animate-pulse rounded-2xl bg-gray-100" />
+                ))}
+              </div>
+            ) : mostBookedItems.length > 0 ? (
+              <div className="space-y-2.5">
+                {mostBookedItems.map((item, index) => (
+                  <Link
+                    key={item.itemCode}
+                    href={`/admin/items/${item._id}`}
+                    className="group flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-4 transition-all hover:-translate-y-0.5 hover:border-pink-100 hover:bg-pink-50/40 hover:shadow-md"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                          index === 0
+                            ? 'bg-amber-100 text-amber-700'
+                            : index === 1
+                            ? 'bg-slate-100 text-slate-600'
+                            : index === 2
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {index + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-gray-900">
+                          {item.itemName}
+                        </p>
+                        <p className="truncate text-xs text-gray-400">
+                          Code: {item.itemCode}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">{item.itemName}</p>
-                      <p className="text-sm text-gray-500">Code: {item.itemCode}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-purple-600">{item.bookingCount}</p>
-                    <p className="text-xs text-gray-500">bookings</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No booking data for this month</p>
-            </div>
-          )}
-        </div>
 
-        {stats.overdue === 0 && stats.dueToday === 0 && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-8 text-center shadow-lg shadow-green-200/50">
-            <div className="text-6xl mb-4">✅</div>
-            <h3 className="text-xl font-bold text-green-800 mb-2">All Clear!</h3>
-            <p className="text-green-700">No overdue or due returns today</p>
-          </div>
-        )}
+                    <div className="shrink-0 text-right">
+                      <p className="text-xl font-bold text-purple-600">
+                        {item.bookingCount}
+                      </p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400">
+                        bookings
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-gray-50 py-10 text-center text-sm text-gray-400">
+                No booking data for this month.
+              </div>
+            )}
+          </section>
+
+          {/* All clear */}
+          {stats.overdue === 0 && stats.dueToday === 0 && (
+            <section className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-emerald-100 bg-emerald-50/70 px-6 py-10 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+                <CheckCircle className="h-7 w-7 text-emerald-600" />
+              </div>
+              <h3 className="mt-4 font-serif text-2xl text-emerald-900">All Clear</h3>
+              <p className="mt-1 text-sm text-emerald-700">
+                No overdue or due returns today.
+              </p>
+            </section>
+          )}
+        </main>
       </div>
 
       {/* Availability Check Modal */}
       {showAvailabilityModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-y-auto rounded-3xl border border-gray-100 bg-white shadow-2xl max-h-[90vh]">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Check Item Availability</h2>
@@ -849,7 +1274,7 @@ export default function AdminDashboard() {
                               className="p-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                             >
                               <div className="font-medium text-gray-800">{item.itemCode}</div>
-                              <div className="text-sm text-gray-600">{item.name}</div>
+                              <div className="text-sm text-gray-500">{item.name}</div>
                               <div className="text-xs text-gray-500">{item.category}</div>
                             </div>
                           ))
@@ -951,7 +1376,7 @@ export default function AdminDashboard() {
                           {result.item && (
                             <div className="mt-3 p-3 bg-white rounded-lg">
                               <p className="font-medium text-gray-800">{result.item.name}</p>
-                              <p className="text-sm text-gray-600">Code: {result.item.itemCode}</p>
+                              <p className="text-sm text-gray-500">Code: {result.item.itemCode}</p>
                               <p className="text-sm text-gray-500 mt-1">Status: {result.item.status}</p>
                             </div>
                           )}
