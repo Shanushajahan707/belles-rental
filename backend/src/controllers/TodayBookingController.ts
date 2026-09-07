@@ -11,9 +11,20 @@ export const getTodayUncheckedInBookings = async (req: Request, res: Response) =
     tomorrow.setDate(today.getDate() + 1);
 
     const bookings = await Booking.find({
-      startDate: { $gte: today, $lt: tomorrow },
-      checkedIn: false,
-      status: { $in: ['booked', 'running'] },
+      $or: [
+        // Bookings starting today that haven't been checked in
+        {
+          startDate: { $gte: today, $lt: tomorrow },
+          checkedIn: false,
+          status: { $in: ['booked', 'running'] },
+        },
+        // Bookings that started in the past but haven't been checked in yet (persist alert until customer arrives)
+        {
+          startDate: { $lt: today },
+          checkedIn: false,
+          status: 'booked',
+        },
+      ],
     })
       .sort({ startDate: 1 })
       .lean();
