@@ -21,6 +21,15 @@ interface Invoice {
   returnDate: string;
   totalAmount: number;
   createdAt: string;
+  items?: {
+    itemName: string;
+    itemCode: string;
+    rentPrice: number;
+    security: number;
+    quantity: number;
+    priceType?: 'full' | 'half';
+    image?: string;
+  }[];
 }
 
 export default function InvoicesPage() {
@@ -79,8 +88,8 @@ export default function InvoicesPage() {
     try {
       const response = await api.post('/invoices/generate', { bookingId });
       if (response.data.invoiceNumber) {
-        // Open invoice in new tab
-        window.open(`/admin/invoices/${response.data.invoiceNumber}`, '_blank');
+        // Open public booking view in new tab
+        window.open(`/booking/${response.data.invoiceNumber}`, '_blank');
       }
     } catch (error: any) {
       console.error('Error generating invoice:', error);
@@ -95,7 +104,8 @@ export default function InvoicesPage() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `invoice-${invoiceNumber}.pdf`);
+      // Use the invoice number as filename (which is now customer-name-date format)
+      link.setAttribute('download', `${invoiceNumber}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -125,9 +135,15 @@ export default function InvoicesPage() {
     try {
       console.log('here');
 
-      const response = await api.post('/invoices/generate', { bookingId: selectedBookingId });
+      const response = await api.post('/invoices/generate', { bookingNumber: selectedBookingId });
+      
+      // Check if it was an update (200) or new creation (201)
+      const message = response.status === 200 
+        ? 'Invoice updated successfully with latest booking data!' 
+        : 'Invoice generated successfully!';
+      
       toast.addToast({
-        message: 'Invoice generated successfully!',
+        message,
         type: 'success',
       });
       console.log('reposns', response);
@@ -349,7 +365,7 @@ export default function InvoicesPage() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#e4d6de] bg-white px-5 py-3 text-sm font-semibold text-[#5d4350] shadow-sm transition hover:border-purple-300 hover:bg-purple-50"
               >
                 <Plus className="h-4 w-4 text-purple-500" />
-                Manual Invoice
+                Manual/Regenerate
               </button>
             </div>
           </div>
@@ -512,18 +528,7 @@ export default function InvoicesPage() {
                                 PDF
                               </button>
 
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/booking-confirmation?bookingNumber=${invoice.bookingNumber}`
-                                  )
-                                }
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-[#e6dbe1] px-3 py-2 text-xs font-semibold text-[#5d4350] transition hover:bg-gray-50"
-                                title="View Booking"
-                              >
-                                <FileText className="h-3.5 w-3.5" />
-                                Booking
-                              </button>
+                             
                             </div>
                           </td>
                         </tr>
@@ -602,11 +607,11 @@ export default function InvoicesPage() {
                           <button
                             onClick={() =>
                               router.push(
-                                `/booking-confirmation?bookingNumber=${invoice.bookingNumber}`
+                                `/booking/${invoice.invoiceNumber}`
                               )
                             }
                             className="rounded-lg border border-[#e6dbe1] p-2 text-[#5d4350] hover:bg-gray-50"
-                            title="View Booking"
+                            title="View Public Booking"
                           >
                             <FileText className="h-4 w-4" />
                           </button>
@@ -644,7 +649,7 @@ export default function InvoicesPage() {
                   Invoice
                 </p>
                 <h3 className="mt-1 font-serif text-2xl font-semibold text-[#2a1722]">
-                  Generate Manual Invoice
+                  Generate/Regenerate Invoice
                 </h3>
               </div>
 
@@ -659,7 +664,7 @@ export default function InvoicesPage() {
 
             <div className="p-6">
               <p className="mb-4 text-sm leading-6 text-[#806c76]">
-                Enter the booking number to generate an invoice manually.
+                Enter the booking number (e.g., 100) to generate or regenerate an invoice with the latest booking data.
               </p>
 
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#6f5b65]">
@@ -668,7 +673,7 @@ export default function InvoicesPage() {
 
               <input
                 type="text"
-                placeholder="Enter booking number..."
+                placeholder="e.g., 285"
                 value={selectedBookingId}
                 onChange={(e) => setSelectedBookingId(e.target.value)}
                 className="h-12 w-full rounded-xl border border-[#e4d8df] bg-[#fcfafb] px-4 text-sm text-[#2a1722] outline-none transition placeholder:text-[#b1a1a8] focus:border-pink-400 focus:ring-4 focus:ring-pink-500/10"
@@ -686,7 +691,7 @@ export default function InvoicesPage() {
                   onClick={handleManualInvoiceGeneration}
                   className="rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-pink-500/20 transition hover:-translate-y-0.5"
                 >
-                  Generate Invoice
+                  Generate/Regenerate
                 </button>
               </div>
             </div>
@@ -775,13 +780,13 @@ export default function InvoicesPage() {
                 <button
                   onClick={() =>
                     router.push(
-                      `/booking-confirmation?bookingNumber=${selectedInvoice.bookingNumber}`
+                      `/booking/${selectedInvoice.invoiceNumber}`
                     )
                   }
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#e4d8df] px-5 py-3 text-sm font-semibold text-[#5d4350] transition hover:bg-[#faf7f9]"
                 >
                   <FileText className="h-4 w-4" />
-                  View Booking
+                  Public View
                 </button>
               </div>
             </div>
