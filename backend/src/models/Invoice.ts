@@ -13,6 +13,7 @@ export interface IInvoice extends Document {
     security: number;
     quantity: number;
     priceType?: 'full' | 'half';
+    image?: string;
   }[];
   bookingNumber: string;
   startDate: string;
@@ -29,6 +30,7 @@ export interface IInvoice extends Document {
   shopAddress: string;
   shopPhone: string;
   shopEmail: string;
+  publicUrl?: string; // Public URL for customers to view their booking
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,6 +61,10 @@ const InvoiceItemSchema: Schema = new Schema({
     type: String,
     enum: ['full', 'half'],
     default: 'full',
+  },
+  image: {
+    type: String,
+    default: '',
   },
 });
 
@@ -171,6 +177,10 @@ const InvoiceSchema: Schema = new Schema(
       required: true,
       trim: true,
       default: 'contact@bellesavenue.com',
+    },
+    publicUrl: {
+      type: String,
+      trim: true,
     },
   },
   {

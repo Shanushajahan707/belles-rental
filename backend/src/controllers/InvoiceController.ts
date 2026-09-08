@@ -16,15 +16,24 @@ export class InvoiceController {
 
       let booking: any | null = null;
 
-      if (bookingId) {
-        booking = await Booking.findById(bookingId).populate('items.itemId');
-      } else if (bookingNumber) {
+      // Check if the input looks like a MongoDB ObjectId (24 character hex string)
+      const isValidObjectId = (id: string) => {
+        return /^[0-9a-fA-F]{24}$/.test(id);
+      };
+
+      // Prioritize booking number for manual invoice generation
+      if (bookingNumber) {
         booking = await Booking.findOne({ bookingNumber }).populate('items.itemId');
+      } else if (bookingId && isValidObjectId(bookingId)) {
+        booking = await Booking.findById(bookingId).populate('items.itemId');
+      } else if (bookingId) {
+        // If bookingId is provided but not a valid ObjectId, treat it as booking number
+        booking = await Booking.findOne({ bookingNumber: bookingId }).populate('items.itemId');
       }
 
       if (!booking) {
         res.status(404).json({
-          error: bookingId ? 'Booking ID not found' : 'Booking number not found',
+          error: 'Booking not found',
           bookingId,
           bookingNumber,
         });
@@ -32,13 +41,17 @@ export class InvoiceController {
       }
 
       const existingInvoice = await this.invoiceService.getInvoiceByBookingId(booking._id.toString());
+      
+      let invoice;
       if (existingInvoice) {
-        res.status(400).json({ error: 'Invoice already exists for this booking', invoice: existingInvoice });
-        return;
+        // Update existing invoice with current booking data
+        invoice = await this.invoiceService.updateInvoice(booking);
+        res.status(200).json(invoice);
+      } else {
+        // Create new invoice
+        invoice = await this.invoiceService.generateInvoice(booking);
+        res.status(201).json(invoice);
       }
-
-      const invoice = await this.invoiceService.generateInvoice(booking);
-      res.status(201).json(invoice);
     } catch (error: any) {
       console.error('Error in generateInvoice:', error);
       res.status(500).json({ error: error.message });

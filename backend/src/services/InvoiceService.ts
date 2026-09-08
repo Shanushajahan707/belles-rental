@@ -18,8 +18,11 @@ export class InvoiceService {
         }
       }
       try {
-        // Generate unique invoice number
-        const invoiceNumber = await this.generateInvoiceNumber();
+        // Generate unique invoice number based on customer name and date
+        const invoiceNumber = await this.generateInvoiceNumber(
+          fullBookingData.customerName,
+          fullBookingData.startDate
+        );
 
         // Calculate totals using stored booking data (not populated item data)
         const totalRent = fullBookingData.items.reduce((sum: number, item: any) => sum + (item.rentPrice || 0), 0);
@@ -46,6 +49,7 @@ export class InvoiceService {
             security: item.security || 0, // Use stored booking security
             quantity: 1,
             priceType: item.priceType || 'full',
+            image: item.itemId?.image || '', // Include item image
           })),
           bookingNumber: fullBookingData.bookingNumber,
           startDate: fullBookingData.startDate,
@@ -62,6 +66,7 @@ export class InvoiceService {
           shopAddress: 'Belles Avenue, Punalur, Kerala',
           shopPhone: '+91 70250 00970',
           shopEmail: 'avenuesbeautyhub@gmail.com',
+          publicUrl: `/booking/${invoiceNumber}`, // Public URL for customers
         });
 
         return await invoice.save();
@@ -103,6 +108,30 @@ export class InvoiceService {
         return map;
       }, {});
 
+      // Regenerate invoice number if it's in old format (INV) or if customer name/date changed
+      if (existingInvoice.invoiceNumber.startsWith('INV') || 
+          existingInvoice.customerName !== bookingData.customerName ||
+          existingInvoice.startDate !== bookingData.startDate) {
+        const newInvoiceNumber = await this.generateInvoiceNumber(
+          bookingData.customerName,
+          bookingData.startDate
+        );
+        existingInvoice.invoiceNumber = newInvoiceNumber;
+        existingInvoice.publicUrl = `/booking/${newInvoiceNumber}`;
+      }
+
+      // Update public URL if it's still missing
+      if (!existingInvoice.publicUrl) {
+        existingInvoice.publicUrl = `/booking/${existingInvoice.invoiceNumber}`;
+      }
+
+      // Update customer information
+      existingInvoice.customerName = bookingData.customerName;
+      existingInvoice.customerPhone = bookingData.phone;
+      existingInvoice.customerAddress = bookingData.address;
+      existingInvoice.startDate = bookingData.startDate;
+      existingInvoice.returnDate = bookingData.returnDate;
+
       existingInvoice.items = bookingData.items.map((item: any) => {
         const rentalItem = rentalItemMap[item.itemId];
         return {
@@ -112,6 +141,7 @@ export class InvoiceService {
           security: item.security || 0,
           quantity: 1,
           priceType: item.priceType || 'full',
+          image: rentalItem?.image || item.itemId?.image || '', // Include item image
         };
       });
       existingInvoice.totalRent = totalRent;
@@ -229,8 +259,27 @@ export class InvoiceService {
 
     doc.text(`Booking Number: ${invoice.bookingNumber}`, pageWidth - 60, 48);
 
+    // Add public URL link prominently at the top
+    let y = 56;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 255); // Blue color for the link
+    const publicUrl = invoice.publicUrl || `/booking/${invoice.invoiceNumber}`;
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const fullUrl = `${baseUrl}${publicUrl}`;
+    
+    // Make the URL clickable
+    const urlWidth = doc.getTextWidth(fullUrl);
+    const urlX = (pageWidth - urlWidth) / 2;
+    doc.textWithLink('View your booking online: ' + fullUrl, urlX, y, { url: fullUrl });
+    doc.setTextColor(0, 0, 0); // Reset to black
+
+    // Add a separator line
+    y += 8;
+    doc.line(10, y, pageWidth - 10, y);
+    y += 5;
+
     // Customer Info
-    let y = 60;
     doc.setFont('helvetica', 'bold');
     doc.text('Customer Information:', 10, y);
 
@@ -252,9 +301,9 @@ export class InvoiceService {
     y += 12;
     doc.setFont('helvetica', 'bold');
 
-    doc.text('Item Name', 10, y);
+    doc.text('Item Details', 10, y);
     doc.text('Item Code', 70, y);
-    doc.text('Item Type', 100, y);
+    doc.text('Item Type', 110, y);
     doc.text('Rent Price', 145, y, { align: 'right' });
     doc.text('Security', 175, y, { align: 'right' });
 
@@ -267,13 +316,21 @@ export class InvoiceService {
     y += 8;
 
     invoice.items.forEach((item) => {
-      doc.text(item.itemName, 10, y);
+      // Item name with better formatting
+      const itemNameLines = doc.splitTextToSize(item.itemName, 55);
+      doc.text(itemNameLines[0], 10, y);
+      
+      if (itemNameLines.length > 1) {
+        y += 5;
+        doc.text(itemNameLines[1], 10, y);
+      }
+
       doc.text(item.itemCode, 70, y);
-      doc.text(item.priceType === 'half' ? 'Half' : 'Full', 100, y);
+      doc.text(item.priceType === 'half' ? 'Half' : 'Full', 110, y);
       doc.text(this.formatCurrency(item.rentPrice), 145, y, { align: 'right' });
       doc.text(this.formatCurrency(item.security), 175, y, { align: 'right' });
 
-      y += 8;
+      y += 10;
     });
 
     // Totals
@@ -354,17 +411,50 @@ ${invoice.shopName}
 ${invoice.shopAddress}
 ${invoice.shopPhone}
 ${invoice.shopEmail}
+
+View your booking online: ${invoice.publicUrl || `/booking/${invoice.invoiceNumber}`}
     `;
   }
 
-  private async generateInvoiceNumber(): Promise<string> {
+  private async generateInvoiceNumber(customerName: string, bookingDate: Date): Promise<string> {
     try {
-      const lastInvoice = await Invoice.findOne().sort({ createdAt: -1 });
-      const lastNumber = lastInvoice?.invoiceNumber || 'INV0000';
-      const numericPart = parseInt(lastNumber.replace('INV', '')) + 1;
-      return `INV${numericPart.toString().padStart(4, '0')}`;
+      // Clean customer name: remove special characters, spaces, and convert to lowercase
+      const cleanName = customerName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .substring(0, 20); // Limit to 20 characters
+      
+      // Format date as YYYY-MM-DD
+      const dateStr = bookingDate.toISOString().split('T')[0];
+      
+      // Generate base invoice number
+      const baseInvoiceNumber = `${cleanName}-${dateStr}`;
+      
+      // Check if this invoice number already exists
+      const existingInvoice = await Invoice.findOne({ invoiceNumber: baseInvoiceNumber });
+      
+      if (!existingInvoice) {
+        return baseInvoiceNumber;
+      }
+      
+      // If exists, append a counter
+      let counter = 1;
+      let newInvoiceNumber = `${baseInvoiceNumber}-${counter}`;
+      
+      while (await Invoice.findOne({ invoiceNumber: newInvoiceNumber })) {
+        counter++;
+        newInvoiceNumber = `${baseInvoiceNumber}-${counter}`;
+      }
+      
+      return newInvoiceNumber;
     } catch (error: any) {
-      return `INV${Date.now().toString().slice(-4)} `;
+      // Fallback to timestamp-based format if something goes wrong
+      const timestamp = Date.now();
+      const cleanName = customerName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .substring(0, 10);
+      return `${cleanName}-${timestamp}`;
     }
   }
 }
