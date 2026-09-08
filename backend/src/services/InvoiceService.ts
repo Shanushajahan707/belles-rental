@@ -265,7 +265,7 @@ export class InvoiceService {
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 255); // Blue color for the link
     const publicUrl = invoice.publicUrl || `/booking/${invoice.invoiceNumber}`;
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = process.env.CORS_ORIGIN || 'http://localhost:3000';
     const fullUrl = `${baseUrl}${publicUrl}`;
     
     // Make the URL clickable
