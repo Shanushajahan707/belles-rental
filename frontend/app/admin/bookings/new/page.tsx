@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Gem,
+  Hash,
   Loader2,
   Minus,
   Plus,
@@ -134,6 +135,7 @@ export default function NewBookingPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [staffName, setStaffName] = useState('');
+  const [bookingNumber, setBookingNumber] = useState('');
 
   const [startDate, setStartDate] = useState(todayString());
   const [returnDate, setReturnDate] = useState(todayString());
@@ -610,6 +612,7 @@ export default function NewBookingPage() {
        * additionalCharges and note.
        */
       const payload = {
+        bookingNumber: bookingNumber.trim() || undefined,
         customerName: customerName.trim(),
         phone: phone.trim(),
         address: address.trim(),
@@ -818,6 +821,27 @@ export default function NewBookingPage() {
                 </div>
 
                 <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+                  <div>
+                    <label
+                      htmlFor="bookingNumber"
+                      className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-500"
+                    >
+                      Booking Register Number
+                    </label>
+
+                    <div className="relative">
+                      <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+
+                      <input
+                        id="bookingNumber"
+                        value={bookingNumber}
+                        onChange={(e) => setBookingNumber(e.target.value)}
+                        placeholder="Enter booking register number"
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-10 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-pink-300 focus:bg-white focus:ring-4 focus:ring-pink-50"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label
                       htmlFor="customerName"
