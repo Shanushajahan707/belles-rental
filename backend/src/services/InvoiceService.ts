@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
 import Invoice, { IInvoice } from '../models/Invoice';
 import RentalItem from '../models/RentalItem';
 import Booking from '../models/Booking';
@@ -273,6 +274,31 @@ export class InvoiceService {
     const urlX = (pageWidth - urlWidth) / 2;
     doc.textWithLink('View your booking online: ' + fullUrl, urlX, y, { url: fullUrl });
     doc.setTextColor(0, 0, 0); // Reset to black
+
+    // Add QR code for mobile users
+    try {
+      const qrCodeDataUrl = await QRCode.toDataURL(fullUrl, {
+        width: 100,
+        margin: 1,
+        errorCorrectionLevel: 'L'
+      });
+      
+      y += 15;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('Scan to view on mobile:', pageWidth / 2, y, { align: 'center' });
+      
+      y += 5;
+      const qrSize = 40;
+      const qrX = (pageWidth - qrSize) / 2;
+      doc.addImage(qrCodeDataUrl, 'PNG', qrX, y, qrSize, qrSize);
+      
+      y += qrSize + 10;
+    } catch (qrError) {
+      console.error('Error generating QR code:', qrError);
+      y += 10;
+    }
 
     // Add a separator line
     y += 8;
