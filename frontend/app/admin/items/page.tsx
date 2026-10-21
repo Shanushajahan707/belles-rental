@@ -564,11 +564,11 @@ export default function ItemsManagement() {
                         <td className="max-w-[230px] px-5 py-4 text-xs leading-5 text-gray-500">{item.category}</td>
                         <td className="px-5 py-4">
                           <p className="text-sm font-semibold text-gray-950">₹{item.rentPrice.toLocaleString('en-IN')}</p>
-                          {item.supportsHalfPricing && <p className="mt-0.5 text-[11px] text-gray-400">Half ₹{item.halfRentPrice.toLocaleString('en-IN')}</p>}
+                          {item.supportsHalfPricing && <p className="mt-1 text-xs font-medium text-purple-600">Half: ₹{item.halfRentPrice.toLocaleString('en-IN')}</p>}
                         </td>
                         <td className="px-5 py-4">
                           <p className="text-sm font-medium text-gray-700">₹{item.securityDeposit.toLocaleString('en-IN')}</p>
-                          {item.supportsHalfPricing && <p className="mt-0.5 text-[11px] text-gray-400">Half ₹{item.halfSecurityDeposit.toLocaleString('en-IN')}</p>}
+                          {item.supportsHalfPricing && <p className="mt-1 text-xs font-medium text-purple-600">Half: ₹{item.halfSecurityDeposit.toLocaleString('en-IN')}</p>}
                         </td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold ring-1 ring-inset ${meta.badge}`}>
@@ -630,9 +630,15 @@ export default function ItemsManagement() {
                       </div>
                       <p className="mt-2 line-clamp-2 text-xs text-gray-500">{item.category}</p>
                       <div className="mt-2 flex items-end justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-950">₹{item.rentPrice.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-gray-400">rent</span></p>
-                          <p className="text-[10px] text-gray-400">Security ₹{item.securityDeposit.toLocaleString('en-IN')}</p>
+                        <div className="space-y-1.5">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-950">₹{item.rentPrice.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-gray-400">rent</span></p>
+                            {item.supportsHalfPricing && <p className="mt-0.5 text-xs font-medium text-purple-600">Half: ₹{item.halfRentPrice.toLocaleString('en-IN')}</p>}
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-700">Security ₹{item.securityDeposit.toLocaleString('en-IN')}</p>
+                            {item.supportsHalfPricing && <p className="mt-0.5 text-xs font-medium text-purple-600">Half: ₹{item.halfSecurityDeposit.toLocaleString('en-IN')}</p>}
+                          </div>
                         </div>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           <Link href={`/admin/items/${item._id}`} className="rounded-lg bg-gray-50 p-2 text-gray-600"><Eye className="h-4 w-4" /></Link>

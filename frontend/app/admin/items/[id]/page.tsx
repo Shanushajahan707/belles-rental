@@ -17,8 +17,11 @@ interface RentalItem {
   category: string;
   image: string;
   rentPrice: number;
+  halfRentPrice: number;
   securityDeposit: number;
+  halfSecurityDeposit: number;
   purchasePrice: number;
+  supportsHalfPricing: boolean;
   status: 'available' | 'booked' | 'running' | 'sold_out';
 }
 
@@ -391,10 +394,12 @@ export default function ItemDetailPage() {
                     <div className="rounded-2xl bg-gray-50 p-4">
                       <p className="text-xs text-gray-500">Rent / day</p>
                       <p className="mt-1 text-lg font-semibold text-gray-900">₹{item.rentPrice?.toLocaleString('en-IN')}</p>
+                      {item.supportsHalfPricing && <p className="mt-0.5 text-xs font-medium text-purple-600">Half: ₹{item.halfRentPrice?.toLocaleString('en-IN')}</p>}
                     </div>
                     <div className="col-span-2 rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
                       <p className="text-xs text-amber-700">Security deposit</p>
                       <p className="mt-1 text-lg font-semibold text-amber-900">₹{item.securityDeposit?.toLocaleString('en-IN')}</p>
+                      {item.supportsHalfPricing && <p className="mt-0.5 text-xs font-medium text-purple-600">Half: ₹{item.halfSecurityDeposit?.toLocaleString('en-IN')}</p>}
                     </div>
                   </div>
                 </div>
