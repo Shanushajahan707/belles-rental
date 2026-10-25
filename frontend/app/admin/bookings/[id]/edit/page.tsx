@@ -622,6 +622,8 @@ export default function EditBookingPage() {
 
         items: selectedItems.map((item) => ({
           itemId: item.itemId,
+          itemName: item.itemName,
+          itemCode: item.itemCode,
           rentPrice: item.rentPrice,
           security: item.security,
           priceType:

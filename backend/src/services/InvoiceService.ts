@@ -101,7 +101,7 @@ export class InvoiceService {
       const totalAmount = totalRentAfterDiscount + totalSecurityAfterDiscount + additionalCharges;
       const balanceAmount = totalAmount - advancePayment;
 
-      // Update existing invoice - fetch item details to get names and codes
+      // Fetch item details from database to get image URLs (itemName and itemCode come from booking)
       const itemIds = bookingData.items.map((item: any) => item.itemId);
       const rentalItems = await RentalItem.find({ _id: { $in: itemIds } });
       const rentalItemMap = rentalItems.reduce((map: any, item: any) => {
@@ -110,7 +110,7 @@ export class InvoiceService {
       }, {});
 
       // Regenerate invoice number if it's in old format (INV) or if customer name/date changed
-      if (existingInvoice.invoiceNumber.startsWith('INV') || 
+      if (existingInvoice.invoiceNumber.startsWith('INV') ||
           existingInvoice.customerName !== bookingData.customerName ||
           existingInvoice.startDate !== bookingData.startDate) {
         const newInvoiceNumber = await this.generateInvoiceNumber(
@@ -135,9 +135,11 @@ export class InvoiceService {
 
       existingInvoice.items = bookingData.items.map((item: any) => {
         const rentalItem = rentalItemMap[item.itemId];
+        // Use itemName and itemCode from booking data (they are stored in the booking document)
+        // Only use database lookup for image URL and as fallback for missing data
         return {
-          itemName: item.itemName || rentalItem?.name || 'Unknown Item',
-          itemCode: item.itemCode || rentalItem?.itemCode || 'N/A',
+          itemName: item.itemName || 'Unknown Item',
+          itemCode: item.itemCode || 'N/A',
           rentPrice: item.rentPrice || 0,
           security: item.security || 0,
           quantity: 1,

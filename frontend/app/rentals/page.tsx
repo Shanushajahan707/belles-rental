@@ -147,7 +147,7 @@ export default function RentalsPage() {
           try {
             const bookings = await fetchBookingInfo(item._id);
 
-            console.log(`Bookings for item ${item.itemCode} (${item._id}):`, bookings);
+            // console.log(`Bookings for item ${item.itemCode} (${item._id}):`, bookings);
 
             return {
               itemId: item._id,
@@ -177,7 +177,7 @@ export default function RentalsPage() {
         bookingsMap[result.itemId] = result.bookings;
       });
 
-      console.log('Final booking info map:', bookingsMap);
+      // console.log('Final booking info map:', bookingsMap);
 
       return bookingsMap;
     },
